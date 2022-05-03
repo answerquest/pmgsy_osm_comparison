@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMGSY Data preview</title>
+
+<link href="lib/leaflet.css" rel="stylesheet">
+<link href="lib/tabulator.min.css" rel="stylesheet">
+<link href="lib/bootstrap.min.css" rel="stylesheet">
+<link href="lib/easy-button.css" rel="stylesheet" >
+<link href="lib/leaflet.fullscreen.css" rel="stylesheet" />
+<link href="lib/leaflet.contextmenu.min.css" rel="stylesheet">
+<link href="lib/leaflet-search.css" rel="stylesheet">
+<link href="lib/selectize.bootstrap5.min.css" rel="stylesheet" />
+<!-- <link href="lib/L.Icon.Pulse.css" rel="stylesheet" /> -->
+
+<!-- <link href="js/style.css" rel="stylesheet"> -->
+
+
+<!-- Put the CSSs first and JSs next -->
+
+<script src="lib/jquery-3.6.0.min.js" type="text/javascript"></script>
+<script src="lib/leaflet.js"></script>
+<script src="lib/easy-button.js"></script>
+<script src="lib/bootstrap.bundle.min.js"></script>
+<script src="lib/tabulator.min.js" type="text/javascript"></script>
+<script src="lib/papaparse.min.js" type="text/javascript"></script>
+<script src="lib/leaflet-ant-path.js"></script>
+<script src="lib/Leaflet.fullscreen.min.js"></script>
+<script src="lib/Leaflet.Control.Custom.js"></script>
+<script src="lib/leaflet-providers.js"></script>
+<script src="lib/leaflet-hash.min.js"></script>
+<script src="lib/leaflet.contextmenu.min.js"></script>
+<script src="lib/leaflet-search.min.js"></script>
+<script src="lib/selectize.min.js"></script>
+<script src="lib/leaflet-lasso.min.js"></script>
+<script src="lib/turf.min.js"></script>
+<!-- <script src="lib/L.Icon.Pulse.js"></script> -->
+
+
+<style>
+/*body {
+    font-size: 0.85em;
+}*/
+
+#map {
+height: 90vh;
+width: 100%;
+}
+
+.regionSelect {
+    padding-top: 20px;
+    background: #e6f2ff; /*light blue*/
+    padding-bottom: 10px;
+}
+
+
+.divOnMap1 {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    /*font-size: 14px;*/
+    border-radius: 5px;
+    box-shadow:0px 0px 5px black;
+    min-height: 50px;
+    max-width: 170px;
+    min-width: 100px;
+    /*overflow-y: scroll;*/
+}
+
+.selectize-dropdown {
+    z-index: 2000;
+}
+
+.osm {
+    background: lightgoldenrodyellow;
+    padding-top: 12px;
+}
+
+.tabulator {
+    background: white;
+}
+
+.narrow1 {
+    width: 70px;
+}
+
+.footer {
+    padding-top: 10px;
+    padding-bottom: 20px;
+    background: lightgreen;
+}
+
+.legend {
+    width: 16px; 
+    height: 16px; 
+    float: left; 
+    margin-right: 7px; 
+    opacity: 0.7; 
+}
+
+.main .col-md-6 {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.main p, .main h3, .main h5 {
+    margin-left: 12px;
+}
+</style>
+</head>
+<body>
+<div class="container-fluid">
+<div class="regionSelect">
+    <h2>Browsing PMGSY Habitations Data</h2>
+    <div class="row">
+        <div class="col-md-4">
+            Select State:<br>
+            <select id="state"></select>
+        </div>
+        <div class="col-md-4">
+            Select District:<br>
+            <select id="district"></select>
+        </div>
+        <div class="col-md-4">
+            Select Block:<br>
+            <select id="block"></select>
+        </div>
+    </div>
+    <br><p align="right">Select from the dropdowns above, or right-click on the map below and select the block around that region directly.</p>
+</div>
+
+<div class="row main">
+    <div class="col-md-6 order-2">
+        <h3>PMGSY Data</h3>
+        <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable1" role="button" aria-expanded="false" aria-controls="collapseTable1">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('habitations')" id="toggle_habitations">Show selected</button> | <span id="table1_status">Select a block</span></small></p>
+        <div class="collapse show" id="collapseTable1">
+            <div id="table1"></div>
+        </div>
+        <div class="osm">
+            <h3>OpenStreetMap Data</h3>
+            <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100" ><button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM data</button></p>
+
+            <h5>1. Not near PMGSY Habitations</h5>
+            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2" role="button" aria-expanded="false" aria-controls="collapseTable2">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> </small></p>
+            <div class="collapse hide" id="collapseTable2">
+                <div id="table2"></div>
+            </div>
+            <br>
+            <h5>2. Nearby PMGSY Habitations</h5>
+            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable3" role="button" aria-expanded="false" aria-controls="collapseTable3">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('osm_near')" id="toggle_osm_near">Show selected</button>  <span id="table3_status"></span></small></p>
+            <div class="collapse hide" id="collapseTable3">
+                <div id="table3"></div>
+            </div>
+
+            <br><br><br>
+
+        </div>
+        <div class="footer container bg-success bg-gradient text-white link-white">
+            <p>Created by <a href="https://nikhilvj.co.in" target="_blank" class="link-light">Nikhil, Kaisyn Consultancy and Training Pvt Ltd.</a><br>
+            Using data from <a class="link-light" href="https://geosadak-pmgsy.nic.in/opendata" target="_blank">PMGSY Open Data Release</a>, collected at <a class="link-light" href="https://github.com/datameet/pmgsy-geosadak" target="_blank">this Datameet repo</a>.<br>
+
+            If you would like to support such projects, consider making a contribution on:<br>
+            UPI: 9766692835@okbizaxis 
+        </div>
+
+        
+    </div>
+    <div class="col-md-6 order-1">
+        <div class="sticky-top">
+            <div id="map"></div>
+            <button class="btn btn-sm btn-outline-success" onclick="jump2OSM()">Open in OSM</button> 
+            <button class="btn btn-sm btn-outline-warning" onclick="jump2OSM('edit')">Edit in OSM</button>
+        </div>
+    </div>
+</div>
+
+
+
+</div>
+
+<script src="lib/India_Outline_Map.js"></script>
+<script src="js/common.js"></script>
+<script src="js/habitation.js"></script>
+
+</body>
+</html>
+

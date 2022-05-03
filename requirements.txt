@@ -1,0 +1,9 @@
+uvicorn[standard]==0.17.6
+fastapi==0.75.2
+aiofiles==0.8.0
+pandas==1.4.2
+psycopg2-binary==2.9.3
+brotli-asgi==1.1.0
+Shapely==1.8.1.post1
+geopandas==0.10.2
+requests==2.27.1
