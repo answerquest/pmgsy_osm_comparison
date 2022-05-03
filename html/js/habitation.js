@@ -831,33 +831,34 @@ function jump2OSM(which='open') {
 
     } else  { // if (which == 'edit') // use if more options come along
         
-        // fire off gpx creation api then go to OSM
-        // not working right now, issue: https://github.com/openstreetmap/iD/issues/9093
-        // $.ajax({
-        //     url: `./API/boundaryGPX/${globalBLOCK_ID}`,
-        //     type: "GET",
-        //     // data : JSON.stringify(payload),
-        //     cache: false,
-        //     contentType: 'application/json',
-        //     success: function (returndata) {
-        //         console.log(returndata);
-        //         z = z < 13? 13 : z;
+        fire off gpx creation api then go to OSM
+        not working right now, issue: https://github.com/openstreetmap/iD/issues/9093
+        $.ajax({
+            url: `./API/boundaryGPX/${globalBLOCK_ID}`,
+            type: "GET",
+            // data : JSON.stringify(payload),
+            cache: false,
+            contentType: 'application/json',
+            success: function (returndata) {
+                console.log(returndata);
+                z = z < 13? 13 : z;
 
-        //         let getUrl = window.location;
-        //         let baseUrl = getUrl .protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[1];
-        //         let gpxURL = `${baseUrl}/gpx/${globalBLOCK_ID}.gpx`;
-        //         url = `https://www.openstreetmap.org/edit?gpx=${gpxURL}#map=${z}/${lat}/${lon}`;
-        //         var win = window.open(url, '_blank');
-        //     },
-        //     error: function (jqXHR, exception) {
-        //         console.log("error:", jqXHR.responseText);
-        //         // jump 2 osm anyway
-        //     },
-        // });
+                let getUrl = window.location;
+                let baseUrl = getUrl .protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[1];
+                let gpxURL = `${baseUrl}/gpx/${globalBLOCK_ID}.gpx`;
+                let url = `https://www.openstreetmap.org/edit#gpx=${gpxURL}`;
+                var win = window.open(url, '_blank');
+            },
+            error: function (jqXHR, exception) {
+                console.log("error:", jqXHR.responseText);
+                // jump 2 osm anyway
+                z = z < 13? 13 : z;
+                let url = `https://www.openstreetmap.org/edit#map=${z}/${lat}/${lon}`;
+                var win = window.open(url, '_blank');
+            },
+        });
 
-        z = z < 13? 13 : z;
-        url = `https://www.openstreetmap.org/edit#map=${z}/${lat}/${lon}`;
-        var win = window.open(url, '_blank');
+        
     }
 
     
