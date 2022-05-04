@@ -831,8 +831,7 @@ function jump2OSM(which='open') {
 
     } else  { // if (which == 'edit') // use if more options come along
         
-        fire off gpx creation api then go to OSM
-        not working right now, issue: https://github.com/openstreetmap/iD/issues/9093
+        // fire off gpx creation api then go to OSM
         $.ajax({
             url: `./API/boundaryGPX/${globalBLOCK_ID}`,
             type: "GET",
