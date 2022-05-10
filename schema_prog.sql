@@ -68,3 +68,11 @@ CREATE TABLE block (
 	geometry GEOMETRY (GEOMETRY, 4326) NULL
 );
 CREATE INDEX block_geom_1 ON block USING GIST (geometry);
+
+
+DROP TABLE IF EXISTS feedback;
+CREATE TABLE feedback (
+	id VARCHAR(10) NOT NULL PRIMARY KEY,
+	session_id VARCHAR(10) NOT NULL,
+	<<TO DO>>
+)
