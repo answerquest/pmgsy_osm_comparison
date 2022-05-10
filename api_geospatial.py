@@ -34,6 +34,24 @@ def makegpd(x,lat='latitude',lon='longitude'):
     return gdf
 
 
+def fetchConvexHull(B, proximity=1000):
+    global METERS_CRS
+    s5 = f"""select ST_AsGeoJSON(
+        ST_Transform(
+            ST_Buffer(
+                ST_Transform(
+                    ST_ConvexHull( ST_Collect(geometry) )
+                    , {METERS_CRS}
+                ), {proximity}
+            ),4326 
+        )
+    ) as geometry
+    from habitation
+    where "BLOCK_ID"='{B}'
+    """
+    holder2 = dbconnect.makeQuery(s5, output='oneValue')
+    return holder2
+
 
 ##################
 # APIs
@@ -44,6 +62,12 @@ def loadRegion(BLOCK_ID: str):
     where "BLOCK_ID" = '{BLOCK_ID}'
     """
     res = dbconnect.makeQuery(s1, output='oneValue')
+
+    if not res:
+        cf.logmessage(f"No block boundary found for {BLOCK_ID}, fallback to habitations data buffered convex hull")
+        res = fetchConvexHull(BLOCK_ID, proximity=1000)
+        if not res:
+            raise HTTPException(status_code=400, detail="No data")
     try:
         geo = json.loads(res)
     except:
@@ -62,6 +86,11 @@ def boundaryGPX(BLOCK_ID: str):
     where "BLOCK_ID" = '{BLOCK_ID}'
     """
     res = dbconnect.makeQuery(s1, output='oneValue')
+    if not res:
+        cf.logmessage(f"No block boundary found for {BLOCK_ID}, fallback to habitations data buffered convex hull")
+        res = fetchConvexHull(BLOCK_ID, proximity=1000)
+        if not res:
+            raise HTTPException(status_code=400, detail="No data")
     try:
         geo = json.loads(res)
     except:
@@ -138,7 +167,7 @@ def comparison1(r: comparison1_payload ):
     # step 4: clip OSM data down to the boundary
     # https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoSeries.within.html
     # for many-to-one, get target in shapely shape format, not gpd
-    odf3 = odf2[odf2.within(shape(boundary1))].reset_index(drop=True)
+    odf3 = odf2[odf2.within(shape(boundary1))].copy().reset_index(drop=True)
     if(len(odf3) < len(odf1)): 
         cf.logmessage(f"OSM: {len(odf1)} places to {len(odf3)} after clipping by buffered boundary")
     # check if nothing in odf3 ?
@@ -158,7 +187,7 @@ def comparison1(r: comparison1_payload ):
 
 
     # step 7: get the OSM data points that fall within this buffered blob
-    odf4 = odf3[odf3.within(buffer1)]
+    odf4 = odf3[odf3.within(buffer1)].copy()
     returnD['num_OSM_near'] = len(odf4)
     if len(odf4):
         odf4['proximity'] = 'near'
@@ -166,7 +195,7 @@ def comparison1(r: comparison1_payload ):
 
 
     # step 8: get the OSM data points that fall outside of this buffered blob
-    odf5 = odf3[~odf3.within(buffer1)]
+    odf5 = odf3[~odf3.within(buffer1)].copy()
     returnD['num_OSM_far'] = len(odf5)
     if len(odf5):
         odf5['proximity'] = 'far'
@@ -181,12 +210,12 @@ def comparison1(r: comparison1_payload ):
         # find which Habitations are within proximity of OSM places, and which are the outliers.
         odf10 = odf3.to_crs(METERS_CRS).buffer(r.proximity).to_crs(4326)
         buffer2 = odf10.unary_union
-        hdf10 = hdf2[hdf2.within(buffer1)]
+        hdf10 = hdf2[hdf2.within(buffer1)].copy()
         returnD['num_Hab_near'] = len(hdf10)
         if len(hdf10):
             returnD['habitations_near'] = hdf10['id'].tolist()
 
-        hdf11 = hdf2[~hdf2.within(buffer1)]
+        hdf11 = hdf2[~hdf2.within(buffer1)].copy()
         returnD['num_Hab_far'] = len(hdf11)
         if len(hdf11):
             returnD['habitations_far'] = hdf11['id'].tolist()

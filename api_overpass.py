@@ -28,8 +28,7 @@ class overpass_payload(BaseModel):
 def overpass_api(r: overpass_payload ):
     global MAX_LAT_SPAN
     global MAX_LON_SPAN
-    global OSM_additional_columns
-
+    
     # validations
     if not cf.validateLL(r.lat1, r.lon1) or not cf.validateLL(r.lat2, r.lon2):
         raise HTTPException(status_code=400, detail="Invalid lat longs for bounding box")
@@ -47,6 +46,7 @@ def overpass_api(r: overpass_payload ):
 
     
 def overpass(lat1, lon1, lat2, lon2):
+    global OSM_additional_columns
     BBOX = f"{lat1},{lon1},{lat2},{lon2}"
 
     url = "https://overpass-api.de/api/interpreter"

@@ -13,6 +13,8 @@
 <link href="lib/leaflet.contextmenu.min.css" rel="stylesheet">
 <link href="lib/leaflet-search.css" rel="stylesheet">
 <link href="lib/selectize.bootstrap5.min.css" rel="stylesheet" />
+<link href="lib/open-iconic-bootstrap.min.css" rel="stylesheet" />
+
 <!-- <link href="lib/L.Icon.Pulse.css" rel="stylesheet" /> -->
 
 <!-- <link href="js/style.css" rel="stylesheet"> -->
@@ -133,7 +135,7 @@ width: 100%;
 <div class="row main">
     <div class="col-md-6 order-2">
         <h3>PMGSY Data</h3>
-        <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable1" role="button" aria-expanded="false" aria-controls="collapseTable1">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('habitations')" id="toggle_habitations">Show selected</button> | <span id="table1_status">Select a block</span></small></p>
+        <p><span class="badge bg-dark" data-bs-toggle="collapse" href="#collapseTable1" role="button" aria-expanded="false" aria-controls="collapseTable1"><span class="oi oi-eye"></span></span><small> <button class="badge bg-primary" onclick="toggleSelected('habitations')" id="toggle_habitations">Show selected</button> <button class="badge bg-success"  onclick="downloadTable(1)"><span class="oi oi-data-transfer-download"></span></button> | <span id="table1_status">Select a block</span></small></p>
         <div class="collapse show" id="collapseTable1">
             <div id="table1"></div>
         </div>
@@ -142,13 +144,13 @@ width: 100%;
             <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100" ><button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM data</button></p>
 
             <h5>1. Not near PMGSY Habitations</h5>
-            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2" role="button" aria-expanded="false" aria-controls="collapseTable2">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> </small></p>
+            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2" role="button" aria-expanded="false" aria-controls="collapseTable2"><span class="oi oi-eye"></span></span> <button class="badge bg-primary" onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> <button class="badge bg-success"  onclick="downloadTable(2)"><span class="oi oi-data-transfer-download"></span></button> | <span id="osm_far_count"></span></small></p>
             <div class="collapse hide" id="collapseTable2">
                 <div id="table2"></div>
             </div>
             <br>
             <h5>2. Nearby PMGSY Habitations</h5>
-            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable3" role="button" aria-expanded="false" aria-controls="collapseTable3">Show/Hide</span> <button class="badge bg-primary" onclick="toggleSelected('osm_near')" id="toggle_osm_near">Show selected</button>  <span id="table3_status"></span></small></p>
+            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable3" role="button" aria-expanded="false" aria-controls="collapseTable3"><span class="oi oi-eye"></span></span> <button class="badge bg-primary" onclick="toggleSelected('osm_near')" id="toggle_osm_near">Show selected</button>  <button class="badge bg-success"  onclick="downloadTable(3)"><span class="oi oi-data-transfer-download"></span></button> | <span id="osm_near_count"></span></small></p>
             <div class="collapse hide" id="collapseTable3">
                 <div id="table3"></div>
             </div>
@@ -156,8 +158,9 @@ width: 100%;
             <br><br><br>
 
         </div>
-        <div class="footer container bg-success bg-gradient text-white link-white">
+        <div class="footer container bg-success bg-gradient text-white">
             <p>Created by <a href="https://nikhilvj.co.in" target="_blank" class="link-light">Nikhil, Kaisyn Consultancy and Training Pvt Ltd.</a><br>
+            <a href="https://github.com/answerquest/pmgsy_osm_comparison" target="_blank" class="link-light">See this project on github</a><br>
             Using data from <a class="link-light" href="https://geosadak-pmgsy.nic.in/opendata" target="_blank">PMGSY Open Data Release</a>, collected at <a class="link-light" href="https://github.com/datameet/pmgsy-geosadak" target="_blank">this Datameet repo</a>.<br>
 
             If you would like to support such projects, consider making a contribution on:<br>
@@ -171,11 +174,47 @@ width: 100%;
             <div id="map"></div>
             <button class="btn btn-sm btn-outline-success" onclick="jump2OSM()">Open in OSM</button> 
             <button class="btn btn-sm btn-outline-warning" onclick="jump2OSM('edit')">Edit in OSM</button>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal1">Feedback</button>
         </div>
     </div>
 </div>
 
 
+<!-- Modals for feedback -->
+
+<!-- Full screen modal -->
+<!-- Button trigger modal -->
+
+
+<!-- Modal -->
+<div class="modal fade" id="feedbackModal1" tabindex="-1" aria-labelledby="feedbackModal1Label" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-md-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="feedbackModal1Label">Submit Feedback for: <span class="HAB_ID"> <span class="HAB_NAME"></span> </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="alert alert-warning">UNDER CONSTRUCTION</p>
+        <div class="row">
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-4">
+                <div id="map2"></div>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="submitFeedback1()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </div>
 

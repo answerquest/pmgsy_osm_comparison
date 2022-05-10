@@ -47,7 +47,7 @@ var table1 = new Tabulator("#table1", {
     columnDefaults:{
         tooltip:true,
     },
-    responsiveLayout: "collapse",
+    // responsiveLayout: "collapse",
     // pagination:true,
     columns: [
         { title: "id", field: "id", headerFilter: "input" },
@@ -610,7 +610,8 @@ function mapHabitations(data, STATE_ID, BLOCK_ID, DISTRICT_ID) {
         let popupContent = `${h.HAB_ID}: ${h.HAB_NAME}<br>
         Population: ${h.TOT_POPULA}<br>
         unique id: ${h.id}<br>
-        <button onclick="locateInTable('${h.id}',1)">Locate in table</button>
+        <button class="badge bg-primary" onclick="locateInTable('${h.id}',1)">Locate in table</button><br>
+        <button class="badge bg-warning text-dark" onclick="feedback1('${h.id}')">Feedback</button>
         `;
 
         globalHab[h.id] = L.circleMarker([lat,lon], circleMarkerOptions)
@@ -886,6 +887,8 @@ function compareWithOSM() {
     };
 
     $('#osm_status').html(`Fetching OSM data and comparing..`);
+    $('#osm_far_count').html(``);
+    $('#osm_near_count').html(``);
 
     $.ajax({
         url: `./API/comparison1`,
@@ -915,6 +918,9 @@ function compareWithOSM() {
                 mapOSM(near1.data, which='near');
             }
             $('#osm_status').html(`Found ${returndata['num_OSM_far']} locations outside proximity, ${returndata['num_OSM_near']} within proximity.`)
+            $('#osm_far_count').html(`${returndata['num_OSM_far']} habitations`);
+            $('#osm_near_count').html(`${returndata['num_OSM_near']} habitations`);
+
 
         },
         error: function (jqXHR, exception) {
@@ -1022,4 +1028,30 @@ function toggleSelected(which='habitations') {
     }
     //alert("Coming soon!");
 
+}
+
+
+function feedback1(id) {
+    $('#feedbackModal1').modal('show');
+    let p = globalHab[id].properties;
+    console.log(p);
+    $('.HAB_ID').html(p.HAB_ID);
+    $('.HAB_NAME').html(p.HAB_NAME);
+}
+
+
+function submitFeedback1() {
+    alert("Coming soon");
+}
+
+function downloadTable(n=1) {
+    if (n == 1) {
+        table1.download("csv", `block_${globalBLOCK_ID}_pmgsy.csv`, {bom:true});
+
+    } else if (n == 2) {
+        table2.download("csv", `block_${globalBLOCK_ID}_osm_far.csv`, {bom:true});
+
+    } else {
+        table3.download("csv", `block_${globalBLOCK_ID}_osm_near.csv`, {bom:true});
+    }
 }

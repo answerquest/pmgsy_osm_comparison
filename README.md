@@ -37,3 +37,28 @@ And imported into a PostGreSQL DB as per this script https://github.com/answerqu
 If you would like to support such projects, consider making a one-contribution on:
 **UPI: 9766692835@okbizaxis**
 
+
+## Stats file
+
+There are 2 python scripts here that aren't part of the fastapi server program:
+- habitation_stats.py
+- habitation_stats_embellish.ipynb
+
+These were used to loop over every habitations block, compare PMGSY and OSM data, and output a stats dump:  
+**stats_habitations_vs_OSM_v2.csv**
+
+One can use this CSV directly for getting a bird's eye view of the state of PMGSY vs OSM rural habitations mapping in all of India.
+
+Columns:
+
+- hab_num: number of PMGSY mapped habitations
+- hab_outside: number of habitations outside of block boundary
+- osm_num: number of OSM rural places
+- greater: were there more habitations in this block or more OSM places
+- osm_near: number of OSM places that are within 1km of nearest habitation
+- osm_far: number of OSM places that are more than 1km from habitation
+- hab_near: number of PMGSY habitations that have an OSM place within 1km distance
+- hab_far: number of PMGSY habitations that don’t have any OSM place within 1km distance
+- hab_osm_diff: Habitations - OSM places (negative if OSM places greater in the block)
+- lat, lon: Centroid of the block
+- no_shape: 1 - Boundary for this block wasn't present in the PMGSY dataset, so was assumed by taking convex hull of the habitations and applying 1km buffer. 0 - nothing

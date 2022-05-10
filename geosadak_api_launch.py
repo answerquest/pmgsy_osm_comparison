@@ -28,7 +28,7 @@ import api_regions
 import api_habitations
 import api_overpass
 import api_geospatial
-
+import api_feedback
 
 # https://fastapi.tiangolo.com/tutorial/static-files/
 app.mount("/gpx", StaticFiles(directory="gpx", html = False), name="static2")
