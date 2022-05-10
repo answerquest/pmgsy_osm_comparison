@@ -25,6 +25,8 @@ root = os.path.dirname(__file__)
 gpxFolder = os.path.join(root,'gpx')
 os.makedirs(gpxFolder, exist_ok=True)
 
+OSM_additional_columns = ['name','place','population','postal_code','wikidata','wikipedia','source','is_in','addr:country','addr:postcode']
+
 #########
 # FUNCTIONS
 
@@ -51,6 +53,42 @@ def fetchConvexHull(B, proximity=1000):
     """
     holder2 = dbconnect.makeQuery(s5, output='oneValue')
     return holder2
+
+
+def processOverpassResult(data):
+    global OSM_additional_columns
+    collector = []
+    for e in data:
+        if e['type'] == 'node':
+            # exclude entries which are just nodes but no tags {} - those are nodes under some other object and not actual OSM places
+            if not e.get('tags',False):
+                continue
+            row = {'osmId': e['id'], 'lat':e['lat'], 'lon':e['lon'], 'type':e['type']}
+            # row.update(e.get('tags',{}))
+            for col in OSM_additional_columns:
+                if e.get('tags',{}).get(col):
+                    row[col] = e['tags'][col]
+            collector.append(row)
+        
+        elif e['type'] == 'way' and e.get('tags',{}):
+            # if polygon, then take its centroid
+            if e.get('center',False):
+                row = {'osmId': e['id'], 'lat':e['center']['lat'], 'lon':e['center']['lon'], 'type':e['type']}
+                for col in OSM_additional_columns:
+                    if e.get('tags',{}).get(col):
+                        row[col] = e['tags'][col]
+                collector.append(row)
+    
+    if len(collector):
+        df1 = pd.DataFrame(collector).fillna('')
+        # TO DO: whitelist of accepted column names, or upper limit on variety of tags
+
+        returnD = {'num': len(df1), 'osm_locations':df1.to_csv(index=False)} 
+    else:
+        returnD = {'num':0 }
+    
+    return returnD
+
 
 
 ##################
@@ -146,6 +184,119 @@ def comparison1(r: comparison1_payload ):
     # step 2: fetch data from OSM
     t2 = time.time()
     osmHolder = overpass(boundsT[1], boundsT[0], boundsT[3], boundsT[2])
+    if not osmHolder.get('num'):
+        # no data from OSM? quit here only
+        raise HTTPException(status_code=400, detail="No overpass data found")
+    odf1 = pd.read_csv(io.BytesIO(osmHolder.get('osm_locations').encode('UTF-8'))).fillna('')
+    odf2 = makegpd(odf1, lat='lat',lon='lon')
+
+
+    # step 3: fetch habitations data
+    # do habitations fetch after overpass, to save the trouble in case there's no data from overpass
+    t3 = time.time()
+    habHolder = habitations(r.STATE_ID, r.BLOCK_ID)
+    hdf1 = pd.read_csv(io.BytesIO(habHolder.get('data').encode('UTF-8'))).fillna('')
+    hdf2 = makegpd(hdf1)
+
+
+    # ok NOW start the geospatial work
+    t4 = time.time()
+
+    # step 4: clip OSM data down to the boundary
+    # https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoSeries.within.html
+    # for many-to-one, get target in shapely shape format, not gpd
+    odf3 = odf2[odf2.within(shape(boundary1))].copy().reset_index(drop=True)
+    if(len(odf3) < len(odf1)): 
+        cf.logmessage(f"OSM: {len(odf1)} places to {len(odf3)} after clipping by buffered boundary")
+    # check if nothing in odf3 ?
+    if not len(odf3):
+        returnD['num_OSM_near'] = 0
+        returnD['num_OSM_far'] = 0
+        return returnD
+
+
+    # step 5: buffer the habitation data to <proximity> radius
+    hdf3 = hdf2.to_crs(METERS_CRS).buffer(r.proximity).to_crs(4326)
+
+
+    # step 6: turn it to a single blob
+    buffer1 = hdf3.unary_union
+    # from https://pygis.io/docs/e_buffer_neighbors.html
+
+
+    # step 7: get the OSM data points that fall within this buffered blob
+    odf4 = odf3[odf3.within(buffer1)].copy()
+    returnD['num_OSM_near'] = len(odf4)
+    if len(odf4):
+        odf4['proximity'] = 'near'
+        returnD['OSM_near'] = odf4.drop(columns='geometry').to_csv(index=False)
+
+
+    # step 8: get the OSM data points that fall outside of this buffered blob
+    odf5 = odf3[~odf3.within(buffer1)].copy()
+    returnD['num_OSM_far'] = len(odf5)
+    if len(odf5):
+        odf5['proximity'] = 'far'
+        returnD['OSM_far'] = odf5.drop(columns='geometry').to_csv(index=False)
+    
+
+    t5 = time.time()
+    #######
+    if r.outlier_habitations:
+        # do reverse proximity check: buffer and make a blob of all the OSM places, 
+        # then do a within check with Habitations data.
+        # find which Habitations are within proximity of OSM places, and which are the outliers.
+        odf10 = odf3.to_crs(METERS_CRS).buffer(r.proximity).to_crs(4326)
+        buffer2 = odf10.unary_union
+        hdf10 = hdf2[hdf2.within(buffer1)].copy()
+        returnD['num_Hab_near'] = len(hdf10)
+        if len(hdf10):
+            returnD['habitations_near'] = hdf10['id'].tolist()
+
+        hdf11 = hdf2[~hdf2.within(buffer1)].copy()
+        returnD['num_Hab_far'] = len(hdf11)
+        if len(hdf11):
+            returnD['habitations_far'] = hdf11['id'].tolist()
+
+    t6 = time.time()
+
+    returnD['time_region_fetch'] = round(t2-t1,3)
+    returnD['time_osm_fetch'] = round(t3-t2,3)
+    returnD['time_habitations_fetch'] = round(t4-t3,3)
+    returnD['time_geospatial1'] = round(t5-t4,3)
+    if r.outlier_habitations: returnD['time_geospatial2'] = round(t6-t5,3)
+    returnD['time_total'] = round(t6-t1,3)
+    
+    return returnD
+
+
+##################################3
+
+class comparison2_payload(BaseModel):
+    STATE_ID: str
+    BLOCK_ID: str
+    osmData: list = []
+    proximity: Optional[int] = 1000
+    outlier_habitations: Optional[bool] = False
+    # shape_buffer: Optional[int] = 1000
+
+@app.post("/API/comparison2", tags=["geospatial"])
+def comparison1(r: comparison2_payload ):
+    global METERS_CRS
+    returnD = {}
+
+    # step 1: fetch boundary
+    t1 = time.time()
+    boundary1 = loadRegion(r.BLOCK_ID)
+    boundsT = shape(boundary1).bounds
+    # looks like: (79.686591005, 10.982368874, 79.858169814, 11.193869573) so lon, lat, lon, lat
+    
+
+    # step 2: fetch data from OSM
+    t2 = time.time()
+
+    osmHolder = processOverpassResult(r.osmData)
+    # osmHolder = overpass(boundsT[1], boundsT[0], boundsT[3], boundsT[2])
     if not osmHolder.get('num'):
         # no data from OSM? quit here only
         raise HTTPException(status_code=400, detail="No overpass data found")
