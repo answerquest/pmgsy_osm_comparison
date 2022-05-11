@@ -446,6 +446,10 @@ function loadStates() {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                alert(jqXHR.responseJSON.detail);
+            } 
+
             // $("#stopsTable_status").html(jqXHR.responseText);
         },
     });
@@ -470,7 +474,9 @@ function loadDistricts(STATE_ID) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
-            // $("#stopsTable_status").html(jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                alert(jqXHR.responseJSON.detail);
+            } 
         },
     });
 }
@@ -495,7 +501,9 @@ function loadBlocks(STATE_ID, DISTRICT_ID) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
-            // $("#stopsTable_status").html(jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                alert(jqXHR.responseJSON.detail);
+            } 
         },
     });
 }
@@ -537,7 +545,9 @@ function loadRegion(BLOCK_ID) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
-            // $("#stopsTable_status").html(jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                alert(jqXHR.responseJSON.detail);
+            } 
         },
     });
 }
@@ -586,6 +596,12 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                $('#table1_status').html(jqXHR.responseJSON.detail);
+                alert(jqXHR.responseJSON.detail);
+            } 
+
+
             // $("#stopsTable_status").html(jqXHR.responseText);
         },
     });
@@ -866,72 +882,72 @@ function jump2OSM(which='open') {
     
 }
 
-function OLD_compareWithOSM() {
-    table2.clearData();
-    table3.clearData();
-    osmLayer1.clearLayers();
-    osmLayer2.clearLayers();
+// function OLD_compareWithOSM() {
+//     table2.clearData();
+//     table3.clearData();
+//     osmLayer1.clearLayers();
+//     osmLayer2.clearLayers();
 
-    let proximity = parseInt($('#proximity').val());
-    if(!proximity) {
-        alert(`Please enter a valid proximity value in meters`);
-        return;
-    }
-    if(!globalBLOCK_ID.length) {
-        alert("Please select a block first");
-        return;
-    }
+//     let proximity = parseInt($('#proximity').val());
+//     if(!proximity) {
+//         alert(`Please enter a valid proximity value in meters`);
+//         return;
+//     }
+//     if(!globalBLOCK_ID.length) {
+//         alert("Please select a block first");
+//         return;
+//     }
 
-    let payload = {
-        'STATE_ID': globalSTATE_ID,
-        'BLOCK_ID': globalBLOCK_ID,
-        'proximity': proximity
-    };
+//     let payload = {
+//         'STATE_ID': globalSTATE_ID,
+//         'BLOCK_ID': globalBLOCK_ID,
+//         'proximity': proximity
+//     };
 
-    $('#osm_status').html(`Fetching OSM data and comparing..`);
-    $('#osm_far_count').html(``);
-    $('#osm_near_count').html(``);
+//     $('#osm_status').html(`Fetching OSM data and comparing..`);
+//     $('#osm_far_count').html(``);
+//     $('#osm_near_count').html(``);
 
-    $.ajax({
-        url: `./API/comparison1`,
-        type: "POST",
-        data : JSON.stringify(payload),
-        cache: false,
-        contentType: 'application/json',
-        success: function (returndata) {
-            // doubletap
-            osmLayer1.clearLayers();
-            osmLayer2.clearLayers();
-            let total = returndata['OSM_near'] + returndata['OSM_far'];
-            if(total == 0) {
-                $('#osm_status').html(`No OSM data found within selected block boundary.`);
-                return;
-            }
+//     $.ajax({
+//         url: `./API/comparison1`,
+//         type: "POST",
+//         data : JSON.stringify(payload),
+//         cache: false,
+//         contentType: 'application/json',
+//         success: function (returndata) {
+//             // doubletap
+//             osmLayer1.clearLayers();
+//             osmLayer2.clearLayers();
+//             let total = returndata['OSM_near'] + returndata['OSM_far'];
+//             if(total == 0) {
+//                 $('#osm_status').html(`No OSM data found within selected block boundary.`);
+//                 return;
+//             }
 
-            if(returndata['num_OSM_far'] > 0) {
-                let far1 = Papa.parse(returndata['OSM_far'], {header:true, skipEmptyLines:true});
-                table2.setData(far1.data);
-                mapOSM(far1.data, which='far');
-            }
+//             if(returndata['num_OSM_far'] > 0) {
+//                 let far1 = Papa.parse(returndata['OSM_far'], {header:true, skipEmptyLines:true});
+//                 table2.setData(far1.data);
+//                 mapOSM(far1.data, which='far');
+//             }
 
-            if(returndata['num_OSM_near'] > 0) {
-                let near1 = Papa.parse(returndata['OSM_near'], {header:true, skipEmptyLines:true});
-                table3.setData(near1.data);
-                mapOSM(near1.data, which='near');
-            }
-            $('#osm_status').html(`Found ${returndata['num_OSM_far']} locations outside proximity, ${returndata['num_OSM_near']} within proximity.`)
-            $('#osm_far_count').html(`${returndata['num_OSM_far']} habitations`);
-            $('#osm_near_count').html(`${returndata['num_OSM_near']} habitations`);
+//             if(returndata['num_OSM_near'] > 0) {
+//                 let near1 = Papa.parse(returndata['OSM_near'], {header:true, skipEmptyLines:true});
+//                 table3.setData(near1.data);
+//                 mapOSM(near1.data, which='near');
+//             }
+//             $('#osm_status').html(`Found ${returndata['num_OSM_far']} locations outside proximity, ${returndata['num_OSM_near']} within proximity.`)
+//             $('#osm_far_count').html(`${returndata['num_OSM_far']} habitations`);
+//             $('#osm_near_count').html(`${returndata['num_OSM_near']} habitations`);
 
 
-        },
-        error: function (jqXHR, exception) {
-            console.log("error:", jqXHR.responseText);
-            $("#osm_status").html(JSON.parse(jqXHR.responseText).detail);
-        },
-    });
+//         },
+//         error: function (jqXHR, exception) {
+//             console.log("error:", jqXHR.responseText);
+//             $("#osm_status").html(JSON.parse(jqXHR.responseText).detail);
+//         },
+//     });
 
-}
+// }
 
 
 
@@ -972,6 +988,9 @@ function blockFromMap(e) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                alert(jqXHR.responseJSON.detail);
+            } 
             
         },
     });
@@ -1060,8 +1079,8 @@ function downloadTable(n=1) {
 
 
 function compareWithOSM() {
-    // second approach to getting OSM data which oursources the overpass api call to client-side, 
-    // then sends the gathered data 
+    // 2-step approach to getting OSM data which oursources the overpass api call to client-side, 
+    // get from overpass with one api call, then send it to backend with another 
 
     $('#osm_status').html(`Fetching OSM data and comparing..`);
     $('#osm_far_count').html(``);
@@ -1071,7 +1090,7 @@ function compareWithOSM() {
     console.log(b);
     let BBOX = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;
 
-    let payload = `
+    let payload = `data=
     [out:json][timeout:25];
     (
       node["place"="isolated_dwelling"](${BBOX});
@@ -1089,14 +1108,13 @@ function compareWithOSM() {
     out skel qt;
     `;
 
-    // formData.append('data', payload );
-    // let payload2 = `data=${payload.replace(/%20/g, "+")}`;
-    let payload2 = `data=${payload}`;
+    // let payload2 = `data=${payload}`;
+    // found that simply passing the original text payload without any quoting works fine
 
     $.ajax({
         url : `https://overpass-api.de/api/interpreter`,
         type : 'POST',
-        data : payload2,
+        data : payload,
         cache: false,
         processData: false,  // tell jQuery not to process the data
         contentType: false,  // tell jQuery not to set contentType
@@ -1114,6 +1132,7 @@ function compareWithOSM() {
         },
         error: function(jqXHR, exception) {
             console.log(jqXHR.responseText);
+            alert("Call to Overpass failed; please try again after some time.");
         }
 
     });
@@ -1136,7 +1155,7 @@ function fetchDiff(elements) {
 
     
     $.ajax({
-        url: `./API/comparison2`,
+        url: `./API/comparison1`,
         type: "POST",
         data : JSON.stringify(payload),
         cache: false,
@@ -1170,7 +1189,10 @@ function fetchDiff(elements) {
         },
         error: function (jqXHR, exception) {
             console.log("error:", jqXHR.responseText);
-            $("#osm_status").html(JSON.parse(jqXHR.responseText).detail);
+            if(jqXHR.responseJSON && jqXHR.responseJSON.detail) {
+                $('#osm_status').html(jqXHR.responseJSON.detail);
+                alert(jqXHR.responseJSON.detail);
+            } 
         },
     });    
 }

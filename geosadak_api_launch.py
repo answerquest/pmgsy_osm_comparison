@@ -26,7 +26,7 @@ app.add_middleware(BrotliMiddleware)
 # import api_sample
 import api_regions
 import api_habitations
-import api_overpass
+# import api_overpass
 import api_geospatial
 import api_feedback
 
