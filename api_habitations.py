@@ -10,12 +10,14 @@ import pandas as pd
 from geosadak_api_launch import app
 import commonfuncs as cf
 import dbconnect
+from globalvars import logIP
 
 #########
 
 @app.get("/API/habitations", tags=["habitations"])
-def habitations(STATE_ID: str, BLOCK_ID: str, DISTRICT_ID: Optional[str]=None):
-    
+def habitations(STATE_ID: str, BLOCK_ID: str, DISTRICT_ID: Optional[str]=None, interservice:Optional[bool] = False, X_Forwarded_For: Optional[str] = Header(None)):
+    if not interservice: logIP(X_Forwarded_For, 'habitations', limit=10)
+
     whereParams = []
     whereParams.append(f""" "STATE_ID" = '{STATE_ID}' """)
 
@@ -36,5 +38,6 @@ def habitations(STATE_ID: str, BLOCK_ID: str, DISTRICT_ID: Optional[str]=None):
     df1['longitude'] = df1['longitude'].apply(lambda x: round(x,5))
 
     returnD = {'data': df1.to_csv(index=False)}
+
     return returnD
 

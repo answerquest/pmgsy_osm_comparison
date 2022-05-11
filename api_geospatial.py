@@ -15,15 +15,17 @@ from shapely.geometry import shape
 from geosadak_api_launch import app
 import commonfuncs as cf
 import dbconnect
-
 from api_habitations import habitations
-from api_overpass import overpass
+from globalvars import logIP
+
 
 METERS_CRS = 7755
 
 root = os.path.dirname(__file__)
 gpxFolder = os.path.join(root,'gpx')
 os.makedirs(gpxFolder, exist_ok=True)
+
+OSM_additional_columns = ['name','place','population','postal_code','wikidata','wikipedia','source','is_in','addr:country','addr:postcode']
 
 #########
 # FUNCTIONS
@@ -53,11 +55,55 @@ def fetchConvexHull(B, proximity=1000):
     return holder2
 
 
+def processOverpassResult(data):
+    global OSM_additional_columns
+    collector = []
+    for e in data:
+        if e['type'] == 'node':
+            # exclude entries which are just nodes but no tags {} - those are nodes under some other object and not actual OSM places
+            if not e.get('tags',False):
+                continue
+            row = {'osmId': e['id'], 'lat':e['lat'], 'lon':e['lon'], 'type':e['type']}
+            # row.update(e.get('tags',{}))
+            for col in OSM_additional_columns:
+                if e.get('tags',{}).get(col):
+                    row[col] = e['tags'][col]
+            collector.append(row)
+        
+        elif e['type'] == 'way' and e.get('tags',{}):
+            # if polygon, then take its centroid
+            if e.get('center',False):
+                row = {'osmId': e['id'], 'lat':e['center']['lat'], 'lon':e['center']['lon'], 'type':e['type']}
+                for col in OSM_additional_columns:
+                    if e.get('tags',{}).get(col):
+                        row[col] = e['tags'][col]
+                collector.append(row)
+    
+    if len(collector):
+        df1 = pd.DataFrame(collector).fillna('')
+        return df1
+    else:
+        return []
+
+        # TO DO: whitelist of accepted column names, or upper limit on variety of tags
+
+    #     returnD = {'num': len(df1), 'osm_locations':df1.to_csv(index=False)} 
+    # else:
+    #     returnD = {'num':0 }
+    
+    # return returnD
+
+
+
+
 ##################
 # APIs
 
 @app.get("/API/loadRegion/{BLOCK_ID}", tags=["geospatial"])
-def loadRegion(BLOCK_ID: str):
+def loadRegion(BLOCK_ID: str, interservice:Optional[bool] = False, X_Forwarded_For: Optional[str] = Header(None) ):
+    
+    if not interservice: logIP(X_Forwarded_For,'loadRegion', limit=3)
+
     s1 = f"""select ST_AsGeoJSON(geometry) from block 
     where "BLOCK_ID" = '{BLOCK_ID}'
     """
@@ -76,8 +122,10 @@ def loadRegion(BLOCK_ID: str):
 
 
 @app.get("/API/boundaryGPX/{BLOCK_ID}", tags=["geospatial"])
-def boundaryGPX(BLOCK_ID: str):
+def boundaryGPX(BLOCK_ID: str, X_Forwarded_For: Optional[str] = Header(None) ):
     # to do: if not already made, create a (simplified!) .GPX file of a region and save it in the gpx static folder for access from OSM editor
+    
+    logIP(X_Forwarded_For,'boundaryGPX')
     
     if os.path.isfile(os.path.join(gpxFolder,f"{BLOCK_ID}.gpx")):
         return {'created':False }
@@ -105,8 +153,9 @@ def boundaryGPX(BLOCK_ID: str):
 ##################
 
 @app.get("/API/blockFromMap/{lat}/{lon}", tags=["geospatial"])
-def blockFromMap(lat: float, lon:float):
-    # select * from block where ST_Contains(geometry, ST_Point(81.914,26.503,4326))
+def blockFromMap(lat: float, lon:float, X_Forwarded_For: Optional[str] = Header(None) ):
+    logIP(X_Forwarded_For,'blockFromMap', limit=5)
+
     s1 = f"""select "BLOCK_ID", "BLOCK_NAME", "DISTRICT_ID", "DISTRICT_NAME", 
     "STATE_ID", "STATE_NAME"
     from block
@@ -117,46 +166,48 @@ def blockFromMap(lat: float, lon:float):
 
 
 
-#########
+
+##################################3
 
 class comparison1_payload(BaseModel):
     STATE_ID: str
     BLOCK_ID: str
+    osmData: list = []
     proximity: Optional[int] = 1000
     outlier_habitations: Optional[bool] = False
     # shape_buffer: Optional[int] = 1000
 
 @app.post("/API/comparison1", tags=["geospatial"])
-def comparison1(r: comparison1_payload ):
+def comparison1(r: comparison1_payload, X_Forwarded_For: Optional[str] = Header(None) ):
+    logIP(X_Forwarded_For,'comparison1', limit=20)
+
     global METERS_CRS
     returnD = {}
 
     # step 1: fetch boundary
     t1 = time.time()
-    boundary1 = loadRegion(r.BLOCK_ID)
+    boundary1 = loadRegion(BLOCK_ID=r.BLOCK_ID, interservice=True)
     boundsT = shape(boundary1).bounds
     # looks like: (79.686591005, 10.982368874, 79.858169814, 11.193869573) so lon, lat, lon, lat
     
-    # not doing: buffering the boundary
-    # bdf1 = gpd.GeoDataFrame({'geometry':[shape(boundary1)]}, crs="EPSG:4326")
-    # bdf2 = bdf1.to_crs(METERS_CRS).buffer(r.shape_buffer).to_crs(4326)
-    # boundsT = bdf2.total_bounds
-
 
     # step 2: fetch data from OSM
     t2 = time.time()
-    osmHolder = overpass(boundsT[1], boundsT[0], boundsT[3], boundsT[2])
-    if not osmHolder.get('num'):
+
+    # osmHolder = overpass(boundsT[1], boundsT[0], boundsT[3], boundsT[2])
+    # odf1 = pd.read_csv(io.BytesIO(osmHolder.get('osm_locations').encode('UTF-8'))).fillna('')
+    
+    odf1 = processOverpassResult(r.osmData)
+    if not len(odf1):
         # no data from OSM? quit here only
         raise HTTPException(status_code=400, detail="No overpass data found")
-    odf1 = pd.read_csv(io.BytesIO(osmHolder.get('osm_locations').encode('UTF-8'))).fillna('')
     odf2 = makegpd(odf1, lat='lat',lon='lon')
 
 
     # step 3: fetch habitations data
     # do habitations fetch after overpass, to save the trouble in case there's no data from overpass
     t3 = time.time()
-    habHolder = habitations(r.STATE_ID, r.BLOCK_ID)
+    habHolder = habitations(STATE_ID=r.STATE_ID, BLOCK_ID=r.BLOCK_ID, interservice=True)
     hdf1 = pd.read_csv(io.BytesIO(habHolder.get('data').encode('UTF-8'))).fillna('')
     hdf2 = makegpd(hdf1)
 

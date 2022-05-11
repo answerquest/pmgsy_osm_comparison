@@ -232,3 +232,9 @@ def timeDiff(t1,t2,formatted=True):
 def timeAdd(t1,delta):
     return secs2time( time2secs(t1) + delta)
 
+
+def checkAge(ts1):
+    t1 = datetime.datetime.strptime(ts1, '%Y-%m-%d %H:%M:%S')
+    t2 = getTime(returnObj=True)
+    return (t2 - t1).total_seconds()
+

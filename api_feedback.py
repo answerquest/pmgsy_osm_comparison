@@ -10,6 +10,7 @@ import pandas as pd
 from geosadak_api_launch import app
 import commonfuncs as cf
 import dbconnect
+from globalvars import logIP, ipTracker
 
 
 #########
@@ -19,8 +20,9 @@ import dbconnect
 # APIs
 
 @app.get("/API/registerSession", tags=["feedback"])
-def registerSession():
-	return cf.makeUID(10)
+def registerSession(X_Forwarded_For: Optional[str] = Header(None) ):
+    logIP(X_Forwarded_For,'registerSession', limit=60)
+    return {'sessionId': cf.makeUID(10)}
 
 
 class feedback1_payload(BaseModel):
@@ -35,6 +37,14 @@ class feedback1_payload(BaseModel):
 
 @app.post("/API/feedback1", tags=["feedback"])
 def feedback1(req: feedback1_payload ):
-	cf.logmessage("feedback1 POST API call")
+    logIP(X_Forwarded_For,'feedback1', limit=60)
 
-	return {}
+    cf.logmessage("feedback1 POST API call")
+
+    return {}
+
+
+@app.get("/API/ipcheck", tags=["feedback"])
+def ipcheck():
+    print(ipTracker)
+    return ipTracker
