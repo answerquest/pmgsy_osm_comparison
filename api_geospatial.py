@@ -103,6 +103,7 @@ def processOverpassResult(data):
 def loadRegion(BLOCK_ID: str, interservice:Optional[bool] = False, X_Forwarded_For: Optional[str] = Header(None) ):
     
     if not interservice: logIP(X_Forwarded_For,'loadRegion', limit=3)
+    calculatedFlag = False
 
     s1 = f"""select ST_AsGeoJSON(geometry) from block 
     where "BLOCK_ID" = '{BLOCK_ID}'
@@ -112,13 +113,15 @@ def loadRegion(BLOCK_ID: str, interservice:Optional[bool] = False, X_Forwarded_F
     if not res:
         cf.logmessage(f"No block boundary found for {BLOCK_ID}, fallback to habitations data buffered convex hull")
         res = fetchConvexHull(BLOCK_ID, proximity=1000)
+        calculatedFlag = True
         if not res:
-            raise HTTPException(status_code=400, detail="No data")
+            raise HTTPException(status_code=400, detail="No boundary data found for selected block")
     try:
         geo = json.loads(res)
     except:
         raise HTTPException(status_code=400, detail="Could not load geo data")
-    return geo
+    
+    return { 'calculated':calculatedFlag, 'geodata':geo }
 
 
 @app.get("/API/boundaryGPX/{BLOCK_ID}", tags=["geospatial"])
@@ -186,7 +189,8 @@ def comparison1(r: comparison1_payload, X_Forwarded_For: Optional[str] = Header(
 
     # step 1: fetch boundary
     t1 = time.time()
-    boundary1 = loadRegion(BLOCK_ID=r.BLOCK_ID, interservice=True)
+    regionHolder = loadRegion(BLOCK_ID=r.BLOCK_ID, interservice=True)
+    boundary1 = regionHolder.get('geodata')
     boundsT = shape(boundary1).bounds
     # looks like: (79.686591005, 10.982368874, 79.858169814, 11.193869573) so lon, lat, lon, lat
     
