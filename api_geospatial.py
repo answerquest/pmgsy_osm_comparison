@@ -165,6 +165,9 @@ def blockFromMap(lat: float, lon:float, X_Forwarded_For: Optional[str] = Header(
     where ST_Contains(geometry, ST_Point({lon},{lat},4326))
     """
     regionD = dbconnect.makeQuery(s1, output='oneJson')
+
+    # to do: in case nothing found, do nearby search in habitation folder
+    
     return regionD
 
 

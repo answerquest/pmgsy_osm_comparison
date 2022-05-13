@@ -10,6 +10,7 @@ const lassoLimit = 50;
 // ############################################
 // GLOBAL VARIABLES
 var URLParams = {}; // for holding URL parameters
+var hashLoc = window.location.hash;
 var habitationsLayer = new L.geoJson(null);
 var blockLayer = new L.geoJson(null);
 var osmLayer1 = new L.geoJson(null);
@@ -21,10 +22,7 @@ var globalOSM = {};
 var globalSTATE_ID = '';
 var globalDISTRICT_ID = '';
 var globalBLOCK_ID = '';
-var globalToggle = {1:false, 2:false};
-var globalTurfBlock = null;
-var globalSelectedHabitation = null;
-var map2 = null;
+var justLandedFlag = true;
 
 var globalSelectedFliter = {
     'habitations': false,
@@ -295,6 +293,34 @@ var circleMarkerOptions = {
 $(document).ready(function () {
     loadURLParams(URLParams);
 
+    // O url param for auto-load OSM diff
+    if(URLParams['O'] && URLParams['O']=='Y') {
+        $('#autoDiff').prop("checked", true);
+    } else {
+        $('#autoDiff').prop("checked", false);
+    }
+
+    $('#autoDiff').change( function(){
+        if ($(this).is(':checked')) {
+            URLParams['O'] = 'Y';
+            let plink = `?`;
+            if(URLParams.S) plink+= `S=${URLParams.S}`;
+            if(URLParams.D) plink+= `&D=${URLParams.D}`;
+            if(URLParams.B) plink+= `&B=${URLParams.B}`;
+            plink += `&O=Y`;
+            plink += window.location.hash;
+            history.pushState({page: 1}, null, plink);
+        } else {
+            URLParams['O'] = 'N';
+            let plink = `?`;
+            if(URLParams.S) plink+= `S=${URLParams.S}`;
+            if(URLParams.D) plink+= `&D=${URLParams.D}`;
+            if(URLParams.B) plink+= `&B=${URLParams.B}`;
+            plink += `&O=N`;
+            plink += window.location.hash;
+            history.pushState({page: 1}, null, plink);
+        }
+    });
     // Selectize initializatons
 
     let stateSelectize = $('#state').selectize({
@@ -428,6 +454,13 @@ $(document).ready(function () {
         $('.leaflet-container').css('cursor','crosshair');
         // from https://stackoverflow.com/a/28724847/4355695 Changing mouse cursor to crosshairs
     });
+
+
+    // clear justLandedFlagflag after 5 secs
+    var wait3 = setTimeout(() => {
+        justLandedFlag = false;
+    },5000);
+
 });
 
 
@@ -542,10 +575,14 @@ function loadRegion(BLOCK_ID) {
 
             }).addTo(blockLayer);
             if (!map.hasLayer(blockLayer)) map.addLayer(blockLayer);
-            map.fitBounds(blockLayer.getBounds());
+            
+            if(! justLandedFlag ) {
+                map.fitBounds(blockLayer.getBounds());
+            } 
+                
 
-            // trigger OSM data load unless url param says so
-            if(!(URLParams['O'] && URLParams['O'] == 'N' )) {
+            // trigger OSM data load if checkbox says so
+            if($('#autoDiff').prop("checked")) {
                 console.log(`Auto-triggering compareWithOSM()`);
                 compareWithOSM();
             }
@@ -583,18 +620,17 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
 
             // change URL to have permalink to this route
             let plink = `?S=${STATE_ID}&D=${DISTRICT_ID}&B=${BLOCK_ID}`;
-            // respect if url param says don't load overpass data
-            if (URLParams['O']) {
-                if (URLParams['O']=='N') {
-                    plink += `&O=N`;
-                } 
-
+            
+            if( $('#autoDiff').prop("checked") ) {
+                plink += `&O=Y`;
             } else {
-                    plink += `&O=Y`;
+                plink += `&O=N`;
             }
 
-            // #${map.getZoom()}/${map.getCenter().lat.toFixed(4)}/${map.getCenter().lng.toFixed(4)}`;
+            hashLoc = window.location.hash;
+            if(hashLoc) plink += hashLoc;
             history.pushState({page: 1}, null, plink);
+
 
         },
         error: function (jqXHR, exception) {
@@ -623,12 +659,12 @@ function mapHabitations(data, STATE_ID, BLOCK_ID, DISTRICT_ID) {
         let lon = parseFloat(h.longitude);
         if(!checklatlng(lat,lon)) return;
         let tooltipContent = `PMGSY ${h.HAB_ID}: ${h.HAB_NAME}`;
-        let popupContent = `<p>${h.HAB_ID}: ${h.HAB_NAME}<br>
+        let popupContent = `<p><b>PMGSY Habitation</b><br>${h.HAB_ID}: ${h.HAB_NAME}<br>
         Population: ${h.TOT_POPULA}<br>
         Location: ${lat.toFixed(5)},${lon.toFixed(5)}<br>
         Unique id: ${h.id}</p>
-        <p><button class="badge bg-primary" onclick="locateInTable('${h.id}',1)">Locate in table</button> 
-        <button class="badge bg-warning text-dark" onclick="feedback1('${h.id}')">Feedback</button>
+        <p><button onclick="locateInTable('${h.id}',1)">Locate in table</button> 
+        <button onclick="feedback1('${h.id}')">Feedback</button>
         </p>`;
 
         globalHab[h.id] = L.circleMarker([lat,lon], circleMarkerOptions)
@@ -764,13 +800,14 @@ function mapOSM(data, which='far') {
 
         // data2.push(o);
 
-        let tooltipContent = `OSM ${o.osmId}: ${o.name.length? o.name : '<no name>'}`;
-        let popupContent = `<p><a href="https://www.openstreetmap.org/${o.type}/${o.osmId}" target="_blank">${o.osmId}</a>: ${o.name}<br>
+        let tooltipContent = `OSM ${o.osmId}: ${o.name.length? o.name : '<no name>'} (${o.place})`;
+        let popupContent = `<p><b>OpenStreetMap place</b><br><a href="https://www.openstreetmap.org/${o.type}/${o.osmId}" target="_blank">${o.osmId}</a>: ${o.name}<br>
         tag: place=${o.place}<br>
         ${o.population? `tag: population=${o.population}<br>`: ``}
         Location: ${lat.toFixed(5)},${lon.toFixed(5)}<br>
         </p><p>
         <button onclick="locateInTable('${o.osmId}',${ which=='far' ? 2 : 3 })">Locate in table</button>
+        <button onclick="feedback2_initiate('${o.osmId}')">Feedback</button>
         </p>`;
 
         globalOSM[o.osmId] = L.circleMarker([lat,lon], circleMarkerOptions2[which])
@@ -858,6 +895,7 @@ function blockFromMap(e) {
         return;
     }
     
+    justLandedFlag = false;
     $.ajax({
         url: `./API/blockFromMap/${lat}/${lon}`,
         type: "GET",
@@ -866,7 +904,11 @@ function blockFromMap(e) {
         contentType: 'application/json',
         success: function (returndata) {
             console.log('blockFromMap:',returndata);
-            loadFull(returndata);
+            if (!returndata.BLOCK_ID) {
+                alert(`No existing region found here`);
+
+            } else
+                loadFull(returndata);
 
         },
         error: function (jqXHR, exception) {
@@ -881,10 +923,16 @@ function blockFromMap(e) {
 
 
 function loadFull(data) {
-    // $("#routes_list")[0].selectize.setValue(URLParams['route'],silent=false)
-
+    
     // set the top URL to this
-    let plink = `?S=${data.STATE_ID}&D=${data.DISTRICT_ID}&B=${data.BLOCK_ID}&O=Y`;
+    let plink = `?S=${data.STATE_ID}&D=${data.DISTRICT_ID}&B=${data.BLOCK_ID}`;
+    if( $('#autoDiff').prop("checked") ) {
+        plink += `&O=Y`;
+    } else {
+        plink += `&O=N`;
+    }
+    hashLoc = window.location.hash;
+    if(hashLoc) plink += hashLoc;
     history.pushState({page: 1}, null, plink);
 
     // refresh the URLParams var
