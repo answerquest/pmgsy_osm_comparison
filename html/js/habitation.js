@@ -459,7 +459,7 @@ $(document).ready(function () {
     // clear justLandedFlagflag after 5 secs
     var wait3 = setTimeout(() => {
         justLandedFlag = false;
-    },5000);
+    },10*1000);
 
 });
 

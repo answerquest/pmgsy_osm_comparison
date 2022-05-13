@@ -346,3 +346,24 @@ function submitfeedback2() {
     });
     
 }
+
+function feedback2_clear() {
+    $('#feedback2_name').val('');
+    $('#feedback2_population').val('');
+    $('#feedback2_comments').val('');
+    $('#feedback2_submitter_name').val('');
+    $('#feedback2_submitter_phone').val('');
+    $('#feedback2_submitter_email').val('');
+    $('#feedback2_status').html('');
+
+    // reset dropdown to default. from https://www.geeksforgeeks.org/how-to-reset-selected-value-to-default-using-jquery/
+    $('#feedback2_category option').each(function () {
+        if (this.defaultSelected) {
+            this.selected = true;
+            return false;
+        }
+    });
+    
+    map.closePopup();
+
+}
