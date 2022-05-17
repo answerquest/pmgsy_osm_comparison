@@ -220,6 +220,21 @@ function feedback2_initiate(osmId) {
     // use jquery ajax only: https://stackoverflow.com/a/16417287/4355695
     let osmUrl = `https://www.openstreetmap.org/api/0.6/${p.type}/${p.osmId}`;
 
+    // $.ajax({
+    //     type: "GET",
+    //     url: osmUrl,
+    //     dataType: "xml",
+    //     success: function (xml) {
+
+    //         // Parse the xml file and get data
+    //         var xmlDoc = $.parseXML(xml),
+    //             $xml = $(xmlDoc);
+    //         $xml.find('node').each(function () {
+    //             console.log($(this).text());
+    //         });
+    //     }
+    // });
+
     $('#feedbackModal2').modal('show');
 
     if(map2) map2.remove();
@@ -363,7 +378,7 @@ function feedback2_clear() {
             return false;
         }
     });
-    
+
     map.closePopup();
 
 }
