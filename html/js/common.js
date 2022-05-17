@@ -38,7 +38,7 @@ function checklatlng(lat,lon) {
 	}
 }
 
-function loadURLParams(URLParams, hashLoc) {
+function loadURLParams(URLParams) {
     // URL parameters. from https://stackoverflow.com/a/2405540/4355695
     var query = window.location.search.substring(1).split("&");
     for (var i = 0, max = query.length; i < max; i++)
@@ -50,10 +50,5 @@ function loadURLParams(URLParams, hashLoc) {
         // this gets stored to global json variable URLParams
     }
 
-    // more: capture hash location also
-    // if(window.location.hash) {
-    // 	hashLoc = window.location.hash;
-    // 	console.log(`Storing hashLoc: ${hashLoc}`);
-    // }
 }
 
