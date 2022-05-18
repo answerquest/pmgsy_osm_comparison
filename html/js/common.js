@@ -49,5 +49,6 @@ function loadURLParams(URLParams) {
         URLParams[decodeURIComponent(param[0])] = decodeURIComponent(param[1] || "");
         // this gets stored to global json variable URLParams
     }
+
 }
 

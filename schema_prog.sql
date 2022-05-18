@@ -11,6 +11,8 @@ CREATE TABLE habitation (
 	"TOT_POPULA" VARCHAR(10) NULL,
 	geometry GEOMETRY(POINT,4326) NULL
 );
+CREATE INDEX habitation_geom_1 ON habitation USING GIST (geometry);
+
 
 DROP TABLE IF EXISTS road;
 CREATE TABLE road (
@@ -70,9 +72,24 @@ CREATE TABLE block (
 CREATE INDEX block_geom_1 ON block USING GIST (geometry);
 
 
+
 DROP TABLE IF EXISTS feedback;
 CREATE TABLE feedback (
-	id VARCHAR(10) NOT NULL PRIMARY KEY,
-	session_id VARCHAR(10) NOT NULL,
-	<<TO DO>>
-)
+	uid VARCHAR(10) NOT NULL PRIMARY KEY,
+	category VARCHAR(20) NOT NULL,
+	ref_id VARCHAR(70) NOT NULL,
+	comments VARCHAR(255) NULL,
+	name_change VARCHAR(100) NULL,
+	pop_change INT NULL,
+	name VARCHAR(100) NULL,
+	phone VARCHAR(20) NULL,
+	email VARCHAR(100) NULL,
+	ip VARCHAR(100) NULL,
+	state_id VARCHAR(10) NULL,
+	district_id VARCHAR(10) NULL,
+	block_id VARCHAR(10) NULL,
+	ts TIMESTAMP(0) NULL,
+	geometry GEOMETRY(GEOMETRY,4326) NULL
+);
+CREATE INDEX feedback_i1 ON feedback (category, ref_id);
+

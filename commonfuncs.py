@@ -233,8 +233,11 @@ def timeAdd(t1,delta):
     return secs2time( time2secs(t1) + delta)
 
 
-def checkAge(ts1):
-    t1 = datetime.datetime.strptime(ts1, '%Y-%m-%d %H:%M:%S')
-    t2 = getTime(returnObj=True)
-    return (t2 - t1).total_seconds()
+def getEpochTime():
+    # fetch time in microsecs
+    return time.time_ns() // pow(10,3)
+
+def checkAge(t1):
+    t2 = getEpochTime()
+    return (t2 - t1) / pow(10,6) # convert microsecs to secs
 

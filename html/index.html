@@ -47,10 +47,14 @@
 }*/
 
 #map {
-height: 90vh;
-width: 100%;
+    height: 90vh;
+    width: 100%;
 }
 
+#map2, #map3 {
+    height: 60vh;
+    width: 100%;
+}
 .regionSelect {
     padding-top: 20px;
     background: #e6f2ff; /*light blue*/
@@ -109,6 +113,19 @@ width: 100%;
 .main p, .main h3, .main h5 {
     margin-left: 12px;
 }
+
+.textarea1 {
+    width: 100%;
+    height: 100px;
+}
+
+red {
+    color: red;
+}
+
+.leaflet-control-attribution {
+    max-width: 400px;
+}
 </style>
 </head>
 <body>
@@ -129,7 +146,7 @@ width: 100%;
             <select id="block"></select>
         </div>
     </div>
-    <br><p align="right">Select from the dropdowns above, or right-click on the map below and select the block around that region directly.</p>
+    <p align="right">Select from the dropdowns above, or right-click on the map below and select the block around that region directly.</p>
 </div>
 
 <div class="row main">
@@ -141,7 +158,7 @@ width: 100%;
         </div>
         <div class="osm">
             <h3>OpenStreetMap Data</h3>
-            <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100" ><button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM data</button></p>
+            <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100" > <button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM data</button> | <input type="checkbox" id="autoDiff" name="autoDiff"> <label for="autoDiff">Load Automatically</label></p>
 
             <h5>1. Not near PMGSY Habitations</h5>
             <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2" role="button" aria-expanded="false" aria-controls="collapseTable2"><span class="oi oi-eye"></span></span> <button class="badge bg-primary" onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> <button class="badge bg-success"  onclick="downloadTable(2)"><span class="oi oi-data-transfer-download"></span></button> | <span id="osm_far_count"></span></small></p>
@@ -174,7 +191,7 @@ width: 100%;
             <div id="map"></div>
             <button class="btn btn-sm btn-outline-success" onclick="jump2OSM()">Open in OSM</button> 
             <button class="btn btn-sm btn-outline-warning" onclick="jump2OSM('edit')">Edit in OSM</button>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal1">Feedback</button>
+            <!-- <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal1">Feedback</button> -->
         </div>
     </div>
 </div>
@@ -188,20 +205,35 @@ width: 100%;
 
 <!-- Modal -->
 <div class="modal fade" id="feedbackModal1" tabindex="-1" aria-labelledby="feedbackModal1Label" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-fullscreen-md-down">
+  <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="feedbackModal1Label">Submit Feedback for: <span class="HAB_ID"> <span class="HAB_NAME"></span> </h5>
+        <h5 class="modal-title" id="feedbackModal1Label">Submit Feedback for: <span id="HAB_ID"></span>, <span id="HAB_NAME"></span> </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p class="alert alert-warning">UNDER CONSTRUCTION</p>
         <div class="row">
             <div class="col-md-4">
+                <p>Habitation Name:<br><input id="feedback1_changeName"></p>
+                <p>Population:<br><input id="feedback1_changePopulation" type="number"></p>
+                <p>Comments: <br><textarea id="feedback1_comments" class="textarea1"></textarea></p>
+                <small><i>Change any one field or add a comment to submit feedback.</i></small>
+                
+                
 
             </div>
             <div class="col-md-4">
-
+                <p>Location: <span id="hab_location"></span></p>
+                <p><input type="checkbox" id="changeLoc" name="changeLoc"> <label for="changeLoc">Suggest change in location:</label><br>
+                <input id="newLoc" readonly><br>
+                <button class="btn btn-sm btn-danger" onclick="feedback1_resetLoc()">Reset</button>
+                </p>
+                <p>Share your contact details:<br>
+                    <input id="feedback1_submitter_name" placeholder="Name">
+                    <input id="feedback1_submitter_phone" placeholder="Phone number">
+                    <input id="feedback1_submitter_email" placeholder="Email">
+                </p>
+                <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
             </div>
             <div class="col-md-4">
                 <div id="map2"></div>
@@ -209,8 +241,58 @@ width: 100%;
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+        <span id="feedback1_status"></span> &nbsp;&nbsp;
         <button type="button" class="btn btn-primary" onclick="submitFeedback1()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal 2 -->
+<div class="modal fade" id="feedbackModal2" tabindex="-1" aria-labelledby="feedbackModal2Label" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="feedbackModal2Label">Submit Feedback for OSM place: <span id="osmName"></span> </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+            <div class="col-md-4">
+                <p>Suggestion:<br>
+                <select id="feedback2_category">
+                  <option value="osm_include" selected="selected">Include this place in PMGSY as a Habitation</option>
+                  <option value="osm_invalid">Do not include; not a valid Habitation</option>
+                </select>
+
+                <p>Name:<br><input id="feedback2_name"></p>
+                <p>Population:<br><input id="feedback2_population" type="number"><br>
+                  <small><i>Value from OSM if any, or you can provide one</i></small></p>
+                <p>Comments:<br><textarea id="feedback2_comments" class="textarea1"></textarea>
+                </p>
+
+            </div>
+            <div class="col-md-4">
+              <!-- <p>Info from OSM:<br>
+                <span id="osm_info"></span></p> -->
+              <p>Share your contact details:<br>
+                  <input id="feedback2_submitter_name" placeholder="Name">
+                  <input id="feedback2_submitter_phone" placeholder="Phone number">
+                  <input id="feedback2_submitter_email" placeholder="Email">
+              </p>
+              <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
+            </div>
+            <div class="col-md-4">
+                <div id="map3"></div>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+        <span id="feedback2_status"></span> &nbsp;&nbsp;
+        <button type="button" class="btn btn-primary" onclick="submitfeedback2()">Submit</button>
       </div>
     </div>
   </div>
@@ -221,6 +303,7 @@ width: 100%;
 <script src="lib/India_Outline_Map.js"></script>
 <script src="js/common.js"></script>
 <script src="js/habitation.js"></script>
+<script src="js/feedback.js"></script>
 
 </body>
 </html>

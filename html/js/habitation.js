@@ -10,6 +10,7 @@ const lassoLimit = 50;
 // ############################################
 // GLOBAL VARIABLES
 var URLParams = {}; // for holding URL parameters
+var hashLoc = window.location.hash;
 var habitationsLayer = new L.geoJson(null);
 var blockLayer = new L.geoJson(null);
 var osmLayer1 = new L.geoJson(null);
@@ -21,8 +22,7 @@ var globalOSM = {};
 var globalSTATE_ID = '';
 var globalDISTRICT_ID = '';
 var globalBLOCK_ID = '';
-var globalToggle = {1:false, 2:false};
-var globalTurfBlock = null;
+var justLandedFlag = true;
 
 var globalSelectedFliter = {
     'habitations': false,
@@ -126,8 +126,6 @@ table2.on("rowDeselected", function(row){
 
 
 
-
-
 // ###########
 // OSM - NEAR
 var table3 = new Tabulator("#table3", {
@@ -172,6 +170,7 @@ table3.on("rowDeselected", function(row){
     colorMap(idsList=[h.osmId], which='osm_near', action='deselect');
 });
 
+
 // #################################
 /* MAP */
 
@@ -180,10 +179,16 @@ var OSM = L.tileLayer.provider('OpenStreetMap.Mapnik', {maxNativeZoom:19, maxZoo
 var gStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']});
 var gHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']});
 var esriWorld = L.tileLayer.provider('Esri.WorldImagery', {maxNativeZoom:18, maxZoom: 20});
+var soi = L.tileLayer('https://storage.googleapis.com/soi_data/export/tiles/{z}/{x}/{y}.webp', {
+    maxZoom: 20,
+    maxNativeZoom: 15,
+    attribution: '<a href="https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx" target="_blank">1:50000 Open Series Maps</a> &copy; <a href="https://www.surveyofindia.gov.in/pages/copyright-policy" target="_blank">Survey Of India</a>, Compiled by <a href="https://github.com/ramSeraph/opendata" target="_blank">ramSeraph</a>'
+});
 var baseLayers = { 
     "OpenStreetMap.org" : OSM, 
     "Carto Positron": cartoPositron, 
     "ESRI Satellite": esriWorld,
+    "Survey of India 1:50000": soi,
     "gStreets": gStreets, 
     "gHybrid": gHybrid
 };
@@ -255,10 +260,11 @@ var hash = new L.Hash(map);
 L.control.custom({
     position: 'bottomleft',
     content: `
-    <span id="osm_status"></span><br>
+    <span id="osm_status"></span><br><br>
     <i class="legend" style="background:blue"></i> PMGSY Habitations<br>
     <i class="legend" style="background:green"></i> OSM places nearby<br>
-    <i class="legend" style="background:red"></i> OSM places far
+    <i class="legend" style="background:red"></i> OSM places far<br>
+    Current loc:<span class="position"></span>
     `,
     //<button class="btn btn-outline-success btn-sm" onclick="openOSM()">Open in OSM</button>`,
     classes: `divOnMap1`
@@ -278,14 +284,49 @@ L.geoJSON(india_outline, {
 }).addTo(map);
 
 
-// test disabling dragging for phone screens
-
+var circleMarkerOptions = {
+    renderer: myRenderer,
+    radius: 6,
+    fillColor: normalColor,
+    color: normalColor_border,
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.7
+};
 
 // ############################################
 // RUN ON PAGE LOAD
 $(document).ready(function () {
     loadURLParams(URLParams);
 
+    // O url param for auto-load OSM diff
+    if(URLParams['O'] && URLParams['O']=='Y') {
+        $('#autoDiff').prop("checked", true);
+    } else {
+        $('#autoDiff').prop("checked", false);
+    }
+
+    $('#autoDiff').change( function(){
+        if ($(this).is(':checked')) {
+            URLParams['O'] = 'Y';
+            let plink = `?`;
+            if(URLParams.S) plink+= `S=${URLParams.S}`;
+            if(URLParams.D) plink+= `&D=${URLParams.D}`;
+            if(URLParams.B) plink+= `&B=${URLParams.B}`;
+            plink += `&O=Y`;
+            plink += window.location.hash;
+            history.pushState({page: 1}, null, plink);
+        } else {
+            URLParams['O'] = 'N';
+            let plink = `?`;
+            if(URLParams.S) plink+= `S=${URLParams.S}`;
+            if(URLParams.D) plink+= `&D=${URLParams.D}`;
+            if(URLParams.B) plink+= `&B=${URLParams.B}`;
+            plink += `&O=N`;
+            plink += window.location.hash;
+            history.pushState({page: 1}, null, plink);
+        }
+    });
     // Selectize initializatons
 
     let stateSelectize = $('#state').selectize({
@@ -365,8 +406,6 @@ $(document).ready(function () {
                 loadHabitations(globalSTATE_ID, BLOCK_ID, globalDISTRICT_ID);
                 loadRegion(BLOCK_ID);
 
-                
-                
             }
             else globalBLOCK_ID = '';
         },
@@ -421,11 +460,18 @@ $(document).ready(function () {
         $('.leaflet-container').css('cursor','crosshair');
         // from https://stackoverflow.com/a/28724847/4355695 Changing mouse cursor to crosshairs
     });
+
+
+    // clear justLandedFlagflag after 5 secs
+    var wait3 = setTimeout(() => {
+        justLandedFlag = false;
+    },10*1000);
+
 });
 
 
 // ############################################
-// FUNCTIONS
+// API CALLS
 
 function loadStates() {
     $.ajax({
@@ -519,9 +565,10 @@ function loadRegion(BLOCK_ID) {
         contentType: 'application/json',
         success: function (returndata) {
             // console.log(returndata);
+            globalBlockBoundary = returndata.geodata;
+            
             blockLayer.clearLayers();
-
-            globalBlockBoundary = L.geoJSON(returndata, {
+            let bound1 = L.geoJSON(returndata.geodata, {
                 style: function (feature) {
                     return {
                         color: "orange",
@@ -534,10 +581,14 @@ function loadRegion(BLOCK_ID) {
 
             }).addTo(blockLayer);
             if (!map.hasLayer(blockLayer)) map.addLayer(blockLayer);
-            map.fitBounds(blockLayer.getBounds());
+            
+            if(! justLandedFlag ) {
+                map.fitBounds(blockLayer.getBounds());
+            } 
+                
 
-            // trigger OSM data load unless url param says so
-            if(!(URLParams['O'] && URLParams['O'] == 'N' )) {
+            // trigger OSM data load if checkbox says so
+            if($('#autoDiff').prop("checked")) {
                 console.log(`Auto-triggering compareWithOSM()`);
                 compareWithOSM();
             }
@@ -575,23 +626,17 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
 
             // change URL to have permalink to this route
             let plink = `?S=${STATE_ID}&D=${DISTRICT_ID}&B=${BLOCK_ID}`;
-            // respect if url param says don't load overpass data
-            if (URLParams['O']) {
-                if (URLParams['O']=='N') {
-                    plink += `&O=N`;
-                } 
-                // else {
-                //     compareWithOSM();
-                // }
-
+            
+            if( $('#autoDiff').prop("checked") ) {
+                plink += `&O=Y`;
             } else {
-                    plink += `&O=Y`;
-                    // compareWithOSM();
+                plink += `&O=N`;
             }
 
-            
-            // #${map.getZoom()}/${map.getCenter().lat.toFixed(4)}/${map.getCenter().lng.toFixed(4)}`;
+            hashLoc = window.location.hash;
+            if(hashLoc) plink += hashLoc;
             history.pushState({page: 1}, null, plink);
+
 
         },
         error: function (jqXHR, exception) {
@@ -607,16 +652,11 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
     });
 }
 
+// ############################################
+// FUNCTIONS
+
 function mapHabitations(data, STATE_ID, BLOCK_ID, DISTRICT_ID) {
-    var circleMarkerOptions = {
-        renderer: myRenderer,
-        radius: 6,
-        fillColor: normalColor,
-        color: normalColor_border,
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.7
-    };
+    
     var mapCounter = 0;
     habitationsLayer.clearLayers();
 
@@ -625,12 +665,13 @@ function mapHabitations(data, STATE_ID, BLOCK_ID, DISTRICT_ID) {
         let lon = parseFloat(h.longitude);
         if(!checklatlng(lat,lon)) return;
         let tooltipContent = `PMGSY ${h.HAB_ID}: ${h.HAB_NAME}`;
-        let popupContent = `${h.HAB_ID}: ${h.HAB_NAME}<br>
+        let popupContent = `<p><b>PMGSY Habitation</b><br>${h.HAB_ID}: ${h.HAB_NAME}<br>
         Population: ${h.TOT_POPULA}<br>
-        unique id: ${h.id}<br>
-        <button class="badge bg-primary" onclick="locateInTable('${h.id}',1)">Locate in table</button><br>
-        <button class="badge bg-warning text-dark" onclick="feedback1('${h.id}')">Feedback</button>
-        `;
+        Location: ${lat.toFixed(5)},${lon.toFixed(5)}<br>
+        Unique id: ${h.id}</p>
+        <p><button onclick="locateInTable('${h.id}',1)">Locate in table</button> 
+        <button onclick="feedback1('${h.id}')">Feedback</button>
+        </p>`;
 
         globalHab[h.id] = L.circleMarker([lat,lon], circleMarkerOptions)
             .bindTooltip(tooltipContent, {direction:'top', offset: [0,-5]})
@@ -658,25 +699,25 @@ function locateInTable(id, which=1) {
         table3.selectRow(id);
         table3.scrollToRow(id, "top", false);
     }
-    // var selectedData = table1.getSelectedData();
-    // let name = selectedData[0].name;
 
-    // setupStopEditing(id, name);
 }
 
-// function colorMap(idsList, radius=6, chosenColor='blue', chosenColor_border='white') {
-//     idsList.forEach(e => {
-//         if(globalHab[e]) {
-//             globalHab[e].setStyle({
-//                 fillColor : chosenColor,
-//                 color: chosenColor_border,
-//                 radius: radius
-//             });
-//         }
-//     });
-// }
+function downloadTable(n=1) {
+    if (n == 1) {
+        table1.download("csv", `block_${globalBLOCK_ID}_pmgsy.csv`, {bom:true});
+
+    } else if (n == 2) {
+        table2.download("csv", `block_${globalBLOCK_ID}_osm_far.csv`, {bom:true});
+
+    } else {
+        table3.download("csv", `block_${globalBLOCK_ID}_osm_near.csv`, {bom:true});
+    }
+}
+
 
 function colorMap(idsList, which='habitations', action='select') {
+    // to do: some fixing - there seem to be some mis-colorings happening
+
     var fillColorVal = 'blue', colorVal = 'white', radiusVal = 5;
     var holder = null;
 
@@ -731,54 +772,6 @@ function colorMap(idsList, which='habitations', action='select') {
 
 
 
-
-// function loadOverpass() {
-//     table2.clearData();
-//     osmLayer1.clearLayers();
-
-//     let bounds = null;
-//     // take bounding box of the block's boundary
-//     if (blockLayer.getLayers().length)
-//         bounds = blockLayer.getBounds().toBBoxString().split(','); // lon,lat,lon,lat
-//     else 
-//         // if no shape loaded, revert to map's bounds
-//         bounds = map.getBounds().toBBoxString().split(',');
-    
-//     let payload = {
-//         'lat1': bounds[1],
-//         'lon1': bounds[0],
-//         'lat2': bounds[3],
-//         'lon2': bounds[2]
-//     }
-//     console.log('loadOverpass',payload);
-
-//     $('#table2_status').html(`Loading..`);
-
-//     $.ajax({
-//         url: `./API/overpass`,
-//         type: "POST",
-//         data : JSON.stringify(payload),
-//         cache: false,
-//         contentType: 'application/json',
-//         success: function (returndata) {
-//             if(returndata.osm_locations) {
-//                 let osmJ = Papa.parse(returndata.osm_locations, {header:true, skipEmptyLines:true});
-//                 mapOSM(osmJ.data);
-//             }
-            
-            
-//             if(returndata.num == 0) {
-//                 $('#table2_status').html(`No OSM data for given limits.`);
-//             }
-
-//         },
-//         error: function (jqXHR, exception) {
-//             console.log("error:", jqXHR.responseText);
-//             $("#table2_status").html(jqXHR.responseText);
-//         },
-//     });
-// }
-
 function mapOSM(data, which='far') {
     var circleMarkerOptions2 = {
         'far': {
@@ -813,12 +806,15 @@ function mapOSM(data, which='far') {
 
         // data2.push(o);
 
-        let tooltipContent = `OSM ${o.osmId}: ${o.name.length? o.name : '<no name>'}`;
-        let popupContent = `<a href="https://www.openstreetmap.org/${o.type}/${o.osmId}" target="_blank">${o.osmId}</a>: ${o.name}<br>
+        let tooltipContent = `OSM ${o.osmId}: ${o.name.length? o.name : '<no name>'} (${o.place})`;
+        let popupContent = `<p><b>OpenStreetMap place</b><br><a href="https://www.openstreetmap.org/${o.type}/${o.osmId}" target="_blank">${o.osmId}</a>: ${o.name}<br>
         tag: place=${o.place}<br>
         ${o.population? `tag: population=${o.population}<br>`: ``}
+        Location: ${lat.toFixed(5)},${lon.toFixed(5)}<br>
+        </p><p>
         <button onclick="locateInTable('${o.osmId}',${ which=='far' ? 2 : 3 })">Locate in table</button>
-        `;
+        <button onclick="feedback2_initiate('${o.osmId}')">Feedback</button>
+        </p>`;
 
         globalOSM[o.osmId] = L.circleMarker([lat,lon], circleMarkerOptions2[which])
             .bindTooltip(tooltipContent, {direction:'top', offset: [0,-5]})
@@ -875,10 +871,8 @@ function jump2OSM(which='open') {
                 var win = window.open(url, '_blank');
             },
         });
-
         
     }
-
     
 }
 
@@ -892,7 +886,7 @@ function insideBoundary(lat,lon) {
     // if no block loaded, just say true - nope, don't want to do that for the new use case
     // if (!globalBlockBoundary.toGeoJSON().features.length) return true;
     
-    return turf.booleanPointInPolygon( turf.point([lon,lat]), globalBlockBoundary.toGeoJSON().features[0]);
+    return turf.booleanPointInPolygon( turf.point([lon,lat]), globalBlockBoundary);
 }
 
 
@@ -907,6 +901,7 @@ function blockFromMap(e) {
         return;
     }
     
+    justLandedFlag = false;
     $.ajax({
         url: `./API/blockFromMap/${lat}/${lon}`,
         type: "GET",
@@ -915,7 +910,11 @@ function blockFromMap(e) {
         contentType: 'application/json',
         success: function (returndata) {
             console.log('blockFromMap:',returndata);
-            loadFull(returndata);
+            if (!returndata.BLOCK_ID) {
+                alert(`No existing region found here`);
+
+            } else
+                loadFull(returndata);
 
         },
         error: function (jqXHR, exception) {
@@ -930,10 +929,16 @@ function blockFromMap(e) {
 
 
 function loadFull(data) {
-    // $("#routes_list")[0].selectize.setValue(URLParams['route'],silent=false)
-
+    
     // set the top URL to this
-    let plink = `?S=${data.STATE_ID}&D=${data.DISTRICT_ID}&B=${data.BLOCK_ID}&O=Y`;
+    let plink = `?S=${data.STATE_ID}&D=${data.DISTRICT_ID}&B=${data.BLOCK_ID}`;
+    if( $('#autoDiff').prop("checked") ) {
+        plink += `&O=Y`;
+    } else {
+        plink += `&O=N`;
+    }
+    hashLoc = window.location.hash;
+    if(hashLoc) plink += hashLoc;
     history.pushState({page: 1}, null, plink);
 
     // refresh the URLParams var
@@ -984,31 +989,6 @@ function toggleSelected(which='habitations') {
 }
 
 
-function feedback1(id) {
-    $('#feedbackModal1').modal('show');
-    let p = globalHab[id].properties;
-    console.log(p);
-    $('.HAB_ID').html(p.HAB_ID);
-    $('.HAB_NAME').html(p.HAB_NAME);
-}
-
-
-function submitFeedback1() {
-    alert("Coming soon");
-}
-
-function downloadTable(n=1) {
-    if (n == 1) {
-        table1.download("csv", `block_${globalBLOCK_ID}_pmgsy.csv`, {bom:true});
-
-    } else if (n == 2) {
-        table2.download("csv", `block_${globalBLOCK_ID}_osm_far.csv`, {bom:true});
-
-    } else {
-        table3.download("csv", `block_${globalBLOCK_ID}_osm_near.csv`, {bom:true});
-    }
-}
-
 
 function compareWithOSM() {
     // 2-step approach to getting OSM data which oursources the overpass api call to client-side, 
@@ -1019,7 +999,7 @@ function compareWithOSM() {
     $('#osm_near_count').html(``);
 
     let b = blockLayer.getBounds();
-    console.log(b);
+    // console.log(b);
     let BBOX = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;
 
     let payload = `data=
@@ -1055,7 +1035,7 @@ function compareWithOSM() {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },
         success : function(returndata) {
-            console.log(returndata);
+            // console.log(returndata);
 
             if( returndata.elements ) {
                 fetchDiff(returndata.elements);

@@ -14,9 +14,19 @@ This app (a backend + a webpage frontend) aims to bridge gaps between PMGSY data
 - Choose a block either by using dropdowns, or right-click / press-hold on the map and load the block at that lat-long.
 
 
+## Phase 2
+- Feedback functionality added for collecting feedback on PMGSY Habitations and OSM rural places
+- IP logging and rate limiting introduced to prevent jamming of backend due to bots / scraping but keeping access open for public
+- Improvements in permalink action for sharing
+- OSM comparison action made optionally automatic via a checkbox and permalink param
+- Feedback currently collected in backend DB
+- SOI map background layer introduced, credits: tile layer created by https://github.com/ramSeraph/opendata/ , orig source: https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx 
+
+
 ## Notes / Caveats:
 - A "far away" place at the border might be near to a habitation on the other side of the border in an adjoining block. So, judge at your own discretion
 - Thick black border on the map is India int'l boundary as per shapefile shared on https://surveyofindia.gov.in/pages/outline-maps-of-india . Precision of the same is lesser at higher zooms, but it's official so going with it. If you want it fixed, pls go get it fixed at the mentioned official govt website first.
+- There are some cases of adjoining blocks having swapped either their block boundaries or block ids with each other. This is as-is from the blocks shapefile shared in PMGSY data release and would be a fluke on their side.
 
 
 ## Tech stack
