@@ -172,6 +172,24 @@ table3.on("rowDeselected", function(row){
 
 
 // #################################
+/* VECTOR LAYERS */
+var vectorTileStyling = {
+    geosadak_roads: {
+        "line-width": 3,
+        "line-color": "rgba(102, 0, 102, 1)",
+        "line-opacity": 0.4
+    }
+};
+var geosadak_roads_url = "https://server.nikhilvj.co.in/buildings1/data/geosadak_roads/{z}/{x}/{y}.pbf";
+var geosadak_roads_VectorTileOptions = {
+    rendererFactory: L.canvas.tile,
+    attribution: 'wait',
+    vectorTileLayerStyles: vectorTileStyling
+};
+var geosadak_roads_PbfLayer = L.vectorGrid.protobuf(geosadak_roads_url, geosadak_roads_VectorTileOptions);
+
+
+// #################################
 /* MAP */
 
 var cartoPositron = L.tileLayer.provider('CartoDB.Positron', {maxNativeZoom:19, maxZoom: 20});
@@ -184,11 +202,18 @@ var soi = L.tileLayer('https://storage.googleapis.com/soi_data/export/tiles/{z}/
     maxNativeZoom: 15,
     attribution: '<a href="https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx" target="_blank">1:50000 Open Series Maps</a> &copy; <a href="https://www.surveyofindia.gov.in/pages/copyright-policy" target="_blank">Survey Of India</a>, Compiled by <a href="https://github.com/ramSeraph/opendata" target="_blank">ramSeraph</a>'
 });
+var buildings = L.tileLayer('https://server.nikhilvj.co.in/buildings1/styles/basic/{z}/{x}/{y}.webp', {
+    maxZoom: 20,
+    attribution: '<a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank">GlobalMLBuildingFootprints India data</a>, rendered using TileServer GL by <a href="" target="_blank">Nikhil VJ</a>, see <a href="https://github.com/answerquest/maptiles_recipe_buildings" target="_blank">recipe here</a>'
+});
+
+
 var baseLayers = { 
     "OpenStreetMap.org" : OSM, 
     "Carto Positron": cartoPositron, 
     "ESRI Satellite": esriWorld,
     "Survey of India 1:50000": soi,
+    "ML Bldg footprints by Microsoft": buildings,
     "gStreets": gStreets, 
     "gHybrid": gHybrid
 };
@@ -214,7 +239,9 @@ var overlays = {
     "PMGSY Habitations": habitationsLayer,
     "Block Boundary": blockLayer,
     "OSM data out of proximity": osmLayer1,
-    "OSM data within proximity": osmLayer2
+    "OSM data within proximity": osmLayer2,
+    "ML Bldg footprints by Microsoft": buildings,
+    "geosadak roads vector tiles": geosadak_roads_PbfLayer
 };
 var layerControl = L.control.layers(baseLayers, overlays, {collapsed: true, autoZIndex:false}).addTo(map); 
 

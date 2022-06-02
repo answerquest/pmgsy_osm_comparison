@@ -20,12 +20,17 @@ var soi2 = L.tileLayer('https://storage.googleapis.com/soi_data/export/tiles/{z}
     maxNativeZoom: 15,
     attribution: '<a href="https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx" target="_blank">1:50000 Open Series Maps</a> &copy; <a href="https://www.surveyofindia.gov.in/pages/copyright-policy" target="_blank">Survey Of India</a>, Compiled by <a href="https://github.com/ramSeraph/opendata" target="_blank">ramSeraph</a>'
 });
+var buildings2 = L.tileLayer('https://server.nikhilvj.co.in/buildings1/styles/basic/{z}/{x}/{y}.webp', {
+    maxZoom: 20,
+    attribution: '<a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank">GlobalMLBuildingFootprints India data</a>, rendered using TileServer GL by <a href="" target="_blank">Nikhil VJ</a>, see <a href="https://github.com/answerquest/maptiles_recipe_buildings" target="_blank">recipe here</a>'
+});
 
 var baseLayers2 = { 
     "OpenStreetMap.org" : OSM2, 
     "Carto Positron": cartoPositron2, 
     "ESRI Satellite": esriWorld2,
     "Survey of India 1:50000": soi,
+    "ML Bldg footprints by Microsoft": buildings2,
     "gStreets": gStreets2, 
     "gHybrid": gHybrid2
 };
@@ -73,7 +78,12 @@ function feedback1(id) {
             ]
         });
 
-        var layerControl2 = L.control.layers(baseLayers2, {}, {collapsed: true, autoZIndex:false}).addTo(map2); 
+        // layers
+        var overlays2 = {
+            "ML Bldg footprints by Microsoft": buildings2
+        };
+
+        var layerControl2 = L.control.layers(baseLayers2, overlays2, {collapsed: true, autoZIndex:false}).addTo(map2); 
 
 
         crosshair2 = new L.marker(map2.getCenter(), {icon: crosshairIcon2, interactive:false});

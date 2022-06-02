@@ -93,3 +93,20 @@ CREATE TABLE feedback (
 );
 CREATE INDEX feedback_i1 ON feedback (category, ref_id);
 
+
+-- to do
+DROP TABLE IF EXISTS hab_osm_import;
+CREATE TABLE block_osm_import (
+	uid VARCHAR(10) NOT NULL PRIMARY KEY,
+	habitation_uid VARCHAR(10) NOT NULL,
+	"HAB_ID" VARCHAR(10) NULL,
+	"STATE_ID" VARCHAR(10) NULL,
+	"DISTRICT_ID" VARCHAR(10) NULL,
+	"BLOCK_ID" VARCHAR(10) NULL, 
+	place_tag VARCHAR(50) NOT NULL,
+	more_tags VARCHAR(255) NULL,
+	comments VARCHAR(255) NULL,
+	osm_id VARCHAR(70) NULL
+);
+CREATE INDEX feedback_i1 ON feedback (habitation_uid);
+
