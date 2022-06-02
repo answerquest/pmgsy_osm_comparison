@@ -30,6 +30,8 @@ var globalSelectedFliter = {
     'osm_near': false
 };
 
+var mapIsDark = false;
+
 // #################################
 /* TABULATOR */
 var itemsTotal = function(values, data, calcParams){
@@ -173,21 +175,60 @@ table3.on("rowDeselected", function(row){
 
 // #################################
 /* VECTOR LAYERS */
+// https://leaflet.github.io/Leaflet.VectorGrid/vectorgrid-api-docs.html#styling-vectorgrids
+// https://leaflet.github.io/Leaflet.VectorGrid/demo-vectortiles.html
+
 var vectorTileStyling = {
-    geosadak_roads: {
-        "line-width": 3,
-        "line-color": "rgba(102, 0, 102, 1)",
-        "line-opacity": 0.4
+    geosadak_roads: function(properties, zoom) {
+        var weight = 3;
+        if(zoom < 10) return {weight:0};
+        if (zoom < 13) {
+            weight = 1;
+        }
+        var color = 'purple';
+        if(mapIsDark) color = 'yellow';
+        return {
+            weight: weight,
+            color: color,
+            opacity: 0.7
+        };
     }
 };
-var geosadak_roads_url = "https://server.nikhilvj.co.in/buildings1/data/geosadak_roads/{z}/{x}/{y}.pbf";
-var geosadak_roads_VectorTileOptions = {
+
+// ,
+//     Indiageojsonl: function(properties, zoom) {
+//         var weight = 2;
+//         var color = 'brown';
+//         if(mapIsDark) color = 'pink';
+//         return {
+//             weight: weight,
+//             color: color,
+//             opacity: 0.7,
+//             fillOpacity: 0.2,
+//             fillColor: color,
+//             fill: true
+//         };
+//     }
+
+var geosadak_roads_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/geosadak_roads/{z}/{x}/{y}.pbf", {
     rendererFactory: L.canvas.tile,
     attribution: 'wait',
-    vectorTileLayerStyles: vectorTileStyling
-};
-var geosadak_roads_PbfLayer = L.vectorGrid.protobuf(geosadak_roads_url, geosadak_roads_VectorTileOptions);
+    vectorTileLayerStyles: vectorTileStyling,
+    maxNativeZoom: 14,
+    maxZoom: 20,
+    interactive: false,
+    pane: 'overlayPane'
+});
 
+// var india_buildings_z14_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/india_buildings_z14/{z}/{x}/{y}.pbf", {
+//     rendererFactory: L.canvas.tile,
+//     attribution: 'wait',
+//     vectorTileLayerStyles: vectorTileStyling,
+//     maxNativeZoom: 14,
+//     maxZoom: 20,
+//     interactive: false,
+//     pane: 'overlayPane'
+// });
 
 // #################################
 /* MAP */
@@ -207,13 +248,43 @@ var buildings = L.tileLayer('https://server.nikhilvj.co.in/buildings1/styles/bas
     attribution: '<a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank">GlobalMLBuildingFootprints India data</a>, rendered using TileServer GL by <a href="" target="_blank">Nikhil VJ</a>, see <a href="https://github.com/answerquest/maptiles_recipe_buildings" target="_blank">recipe here</a>'
 });
 
+esriWorld.on('add', function(e) {
+    mapIsDark = true;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+esriWorld.on('remove', function(e) {
+    mapIsDark = false;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+
+gHybrid.on('add', function(e) {
+    mapIsDark = true;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+
+gHybrid.on('remove', function(e) {
+    mapIsDark = false;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
 
 var baseLayers = { 
     "OpenStreetMap.org" : OSM, 
     "Carto Positron": cartoPositron, 
     "ESRI Satellite": esriWorld,
     "Survey of India 1:50000": soi,
-    "ML Bldg footprints by Microsoft": buildings,
+    // "ML Bldg footprints by Microsoft": buildings,
     "gStreets": gStreets, 
     "gHybrid": gHybrid
 };
@@ -241,9 +312,9 @@ var overlays = {
     "OSM data out of proximity": osmLayer1,
     "OSM data within proximity": osmLayer2,
     "ML Bldg footprints by Microsoft": buildings,
-    "geosadak roads vector tiles": geosadak_roads_PbfLayer
+    "PMGSY Roads": geosadak_roads_PbfLayer
 };
-var layerControl = L.control.layers(baseLayers, overlays, {collapsed: true, autoZIndex:false}).addTo(map); 
+var layerControl = L.control.layers(baseLayers, overlays, {collapsed: true, autoZIndex:true}).addTo(map); 
 
 // https://github.com/Leaflet/Leaflet.fullscreen
 map.addControl(new L.Control.Fullscreen({position:'topright'}));

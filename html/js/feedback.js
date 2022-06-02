@@ -30,7 +30,7 @@ var baseLayers2 = {
     "Carto Positron": cartoPositron2, 
     "ESRI Satellite": esriWorld2,
     "Survey of India 1:50000": soi,
-    "ML Bldg footprints by Microsoft": buildings2,
+    // "ML Bldg footprints by Microsoft": buildings2,
     "gStreets": gStreets2, 
     "gHybrid": gHybrid2
 };
