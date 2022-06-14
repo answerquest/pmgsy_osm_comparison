@@ -195,20 +195,6 @@ var vectorTileStyling = {
     }
 };
 
-// ,
-//     Indiageojsonl: function(properties, zoom) {
-//         var weight = 2;
-//         var color = 'brown';
-//         if(mapIsDark) color = 'pink';
-//         return {
-//             weight: weight,
-//             color: color,
-//             opacity: 0.7,
-//             fillOpacity: 0.2,
-//             fillColor: color,
-//             fill: true
-//         };
-//     }
 
 var geosadak_roads_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/geosadak_roads/{z}/{x}/{y}.pbf", {
     rendererFactory: L.canvas.tile,
@@ -220,6 +206,7 @@ var geosadak_roads_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.
     pane: 'overlayPane'
 });
 
+// doesn't work beyond z=14! better to use the rendered raster only.
 // var india_buildings_z14_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/india_buildings_z14/{z}/{x}/{y}.pbf", {
 //     rendererFactory: L.canvas.tile,
 //     attribution: 'wait',
@@ -573,7 +560,7 @@ $(document).ready(function () {
 
 function loadStates() {
     $.ajax({
-        url: `./API/statesList`,
+        url: `${APIpath}/statesList`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -601,7 +588,7 @@ function loadStates() {
 
 function loadDistricts(STATE_ID) {
     $.ajax({
-        url: `./API/districtsList/${STATE_ID}`,
+        url: `${APIpath}/districtsList/${STATE_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -628,7 +615,7 @@ function loadDistricts(STATE_ID) {
 
 function loadBlocks(STATE_ID, DISTRICT_ID) {
     $.ajax({
-        url: `./API/blocksList?STATE_ID=${STATE_ID}&DISTRICT_ID=${DISTRICT_ID}`,
+        url: `${APIpath}/blocksList?STATE_ID=${STATE_ID}&DISTRICT_ID=${DISTRICT_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -656,7 +643,7 @@ function loadBlocks(STATE_ID, DISTRICT_ID) {
 function loadRegion(BLOCK_ID) {
     blockLayer.clearLayers();
     $.ajax({
-        url: `./API/loadRegion/${BLOCK_ID}`,
+        url: `${APIpath}/loadRegion/${BLOCK_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -705,7 +692,7 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
     table1.clearData();
     $('#table1_status').html(`Loading..`);
     $.ajax({
-        url: `./API/habitations?STATE_ID=${STATE_ID}&BLOCK_ID=${BLOCK_ID}&DISTRICT_ID=${DISTRICT_ID}`,
+        url: `${APIpath}/habitations?STATE_ID=${STATE_ID}&BLOCK_ID=${BLOCK_ID}&DISTRICT_ID=${DISTRICT_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -946,7 +933,7 @@ function jump2OSM(which='open') {
         
         // fire off gpx creation api then go to OSM
         $.ajax({
-            url: `./API/boundaryGPX/${globalBLOCK_ID}`,
+            url: `${APIpath}/boundaryGPX/${globalBLOCK_ID}`,
             type: "GET",
             // data : JSON.stringify(payload),
             cache: false,
@@ -1001,7 +988,7 @@ function blockFromMap(e) {
     
     justLandedFlag = false;
     $.ajax({
-        url: `./API/blockFromMap/${lat}/${lon}`,
+        url: `${APIpath}/blockFromMap/${lat}/${lon}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -1165,7 +1152,7 @@ function fetchDiff(elements) {
 
     
     $.ajax({
-        url: `./API/comparison1`,
+        url: `${APIpath}/comparison1`,
         type: "POST",
         data : JSON.stringify(payload),
         cache: false,

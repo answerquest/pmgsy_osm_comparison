@@ -182,7 +182,7 @@ function submitFeedback1() {
 
     $('#feedback1_status').html(`Sending feedback..`);
     $.ajax({
-        url: `./API/feedback1`,
+        url: `${APIpath}/feedback1`,
         type: "POST",
         data : JSON.stringify(payload),
         cache: false,
@@ -233,24 +233,10 @@ function feedback2_initiate(osmId) {
 
     $('#feedback2_population').val(p.population ? p.population: '');
 
-    // TO DO: populate osm_info by loading from OSM XML
-    // use jquery ajax only: https://stackoverflow.com/a/16417287/4355695
-    let osmUrl = `https://www.openstreetmap.org/api/0.6/${p.type}/${p.osmId}`;
+    // TO DO: populate osm_info by loading from OSM JSON url
+    // example: https://api.openstreetmap.org/api/0.6/node/7659143857.json
+    let osmUrl = `https://api.openstreetmap.org/api/0.6/${p.type}/${p.osmId}.json`;
 
-    // $.ajax({
-    //     type: "GET",
-    //     url: osmUrl,
-    //     dataType: "xml",
-    //     success: function (xml) {
-
-    //         // Parse the xml file and get data
-    //         var xmlDoc = $.parseXML(xml),
-    //             $xml = $(xmlDoc);
-    //         $xml.find('node').each(function () {
-    //             console.log($(this).text());
-    //         });
-    //     }
-    // });
 
     $('#feedbackModal2').modal('show');
 
@@ -355,7 +341,7 @@ function submitfeedback2() {
 
     $('#feedback2_status').html(`Sending feedback..`);
     $.ajax({
-        url: `./API/feedback2`,
+        url: `${APIpath}/feedback2`,
         type: "POST",
         data : JSON.stringify(payload),
         cache: false,
