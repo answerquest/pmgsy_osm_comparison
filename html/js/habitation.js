@@ -30,6 +30,8 @@ var globalSelectedFliter = {
     'osm_near': false
 };
 
+var mapIsDark = false;
+
 // #################################
 /* TABULATOR */
 var itemsTotal = function(values, data, calcParams){
@@ -172,6 +174,50 @@ table3.on("rowDeselected", function(row){
 
 
 // #################################
+/* VECTOR LAYERS */
+// https://leaflet.github.io/Leaflet.VectorGrid/vectorgrid-api-docs.html#styling-vectorgrids
+// https://leaflet.github.io/Leaflet.VectorGrid/demo-vectortiles.html
+
+var vectorTileStyling = {
+    geosadak_roads: function(properties, zoom) {
+        var weight = 3;
+        if(zoom < 10) return {weight:0};
+        if (zoom < 13) {
+            weight = 1;
+        }
+        var color = 'purple';
+        if(mapIsDark) color = 'yellow';
+        return {
+            weight: weight,
+            color: color,
+            opacity: 0.7
+        };
+    }
+};
+
+
+var geosadak_roads_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/geosadak_roads/{z}/{x}/{y}.pbf", {
+    rendererFactory: L.canvas.tile,
+    attribution: 'wait',
+    vectorTileLayerStyles: vectorTileStyling,
+    maxNativeZoom: 14,
+    maxZoom: 20,
+    interactive: false,
+    pane: 'overlayPane'
+});
+
+// doesn't work beyond z=14! better to use the rendered raster only.
+// var india_buildings_z14_PbfLayer = L.vectorGrid.protobuf("https://server.nikhilvj.co.in/buildings1/data/india_buildings_z14/{z}/{x}/{y}.pbf", {
+//     rendererFactory: L.canvas.tile,
+//     attribution: 'wait',
+//     vectorTileLayerStyles: vectorTileStyling,
+//     maxNativeZoom: 14,
+//     maxZoom: 20,
+//     interactive: false,
+//     pane: 'overlayPane'
+// });
+
+// #################################
 /* MAP */
 
 var cartoPositron = L.tileLayer.provider('CartoDB.Positron', {maxNativeZoom:19, maxZoom: 20});
@@ -184,11 +230,48 @@ var soi = L.tileLayer('https://storage.googleapis.com/soi_data/export/tiles/{z}/
     maxNativeZoom: 15,
     attribution: '<a href="https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx" target="_blank">1:50000 Open Series Maps</a> &copy; <a href="https://www.surveyofindia.gov.in/pages/copyright-policy" target="_blank">Survey Of India</a>, Compiled by <a href="https://github.com/ramSeraph/opendata" target="_blank">ramSeraph</a>'
 });
+var buildings = L.tileLayer('https://server.nikhilvj.co.in/buildings1/styles/basic/{z}/{x}/{y}.webp', {
+    maxZoom: 20,
+    attribution: '<a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank">GlobalMLBuildingFootprints India data</a>, rendered using TileServer GL by <a href="" target="_blank">Nikhil VJ</a>, see <a href="https://github.com/answerquest/maptiles_recipe_buildings" target="_blank">recipe here</a>'
+});
+
+esriWorld.on('add', function(e) {
+    mapIsDark = true;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+esriWorld.on('remove', function(e) {
+    mapIsDark = false;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+
+gHybrid.on('add', function(e) {
+    mapIsDark = true;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+
+gHybrid.on('remove', function(e) {
+    mapIsDark = false;
+    if(map.hasLayer(geosadak_roads_PbfLayer)) {
+        map.removeLayer(geosadak_roads_PbfLayer);
+        map.addLayer(geosadak_roads_PbfLayer);
+    }
+});
+
 var baseLayers = { 
     "OpenStreetMap.org" : OSM, 
     "Carto Positron": cartoPositron, 
     "ESRI Satellite": esriWorld,
     "Survey of India 1:50000": soi,
+    // "ML Bldg footprints by Microsoft": buildings,
     "gStreets": gStreets, 
     "gHybrid": gHybrid
 };
@@ -214,9 +297,11 @@ var overlays = {
     "PMGSY Habitations": habitationsLayer,
     "Block Boundary": blockLayer,
     "OSM data out of proximity": osmLayer1,
-    "OSM data within proximity": osmLayer2
+    "OSM data within proximity": osmLayer2,
+    "ML Bldg footprints by Microsoft": buildings,
+    "PMGSY Roads": geosadak_roads_PbfLayer
 };
-var layerControl = L.control.layers(baseLayers, overlays, {collapsed: true, autoZIndex:false}).addTo(map); 
+var layerControl = L.control.layers(baseLayers, overlays, {collapsed: true, autoZIndex:true}).addTo(map); 
 
 // https://github.com/Leaflet/Leaflet.fullscreen
 map.addControl(new L.Control.Fullscreen({position:'topright'}));
@@ -475,7 +560,7 @@ $(document).ready(function () {
 
 function loadStates() {
     $.ajax({
-        url: `./API/statesList`,
+        url: `${APIpath}/statesList`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -503,7 +588,7 @@ function loadStates() {
 
 function loadDistricts(STATE_ID) {
     $.ajax({
-        url: `./API/districtsList/${STATE_ID}`,
+        url: `${APIpath}/districtsList/${STATE_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -530,7 +615,7 @@ function loadDistricts(STATE_ID) {
 
 function loadBlocks(STATE_ID, DISTRICT_ID) {
     $.ajax({
-        url: `./API/blocksList?STATE_ID=${STATE_ID}&DISTRICT_ID=${DISTRICT_ID}`,
+        url: `${APIpath}/blocksList?STATE_ID=${STATE_ID}&DISTRICT_ID=${DISTRICT_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -558,7 +643,7 @@ function loadBlocks(STATE_ID, DISTRICT_ID) {
 function loadRegion(BLOCK_ID) {
     blockLayer.clearLayers();
     $.ajax({
-        url: `./API/loadRegion/${BLOCK_ID}`,
+        url: `${APIpath}/loadRegion/${BLOCK_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -607,7 +692,7 @@ function loadHabitations(STATE_ID, BLOCK_ID, DISTRICT_ID) {
     table1.clearData();
     $('#table1_status').html(`Loading..`);
     $.ajax({
-        url: `./API/habitations?STATE_ID=${STATE_ID}&BLOCK_ID=${BLOCK_ID}&DISTRICT_ID=${DISTRICT_ID}`,
+        url: `${APIpath}/habitations?STATE_ID=${STATE_ID}&BLOCK_ID=${BLOCK_ID}&DISTRICT_ID=${DISTRICT_ID}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -848,7 +933,7 @@ function jump2OSM(which='open') {
         
         // fire off gpx creation api then go to OSM
         $.ajax({
-            url: `./API/boundaryGPX/${globalBLOCK_ID}`,
+            url: `${APIpath}/boundaryGPX/${globalBLOCK_ID}`,
             type: "GET",
             // data : JSON.stringify(payload),
             cache: false,
@@ -903,7 +988,7 @@ function blockFromMap(e) {
     
     justLandedFlag = false;
     $.ajax({
-        url: `./API/blockFromMap/${lat}/${lon}`,
+        url: `${APIpath}/blockFromMap/${lat}/${lon}`,
         type: "GET",
         // data : JSON.stringify(payload),
         cache: false,
@@ -1067,7 +1152,7 @@ function fetchDiff(elements) {
 
     
     $.ajax({
-        url: `./API/comparison1`,
+        url: `${APIpath}/comparison1`,
         type: "POST",
         data : JSON.stringify(payload),
         cache: false,

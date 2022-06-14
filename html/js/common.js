@@ -1,8 +1,8 @@
 // common.js
 
 // CONSTANTS
-const APIpath = 'API/';
-const STARTLOCATION = [22.022,78.464]; //Hyderabad
+
+const STARTLOCATION = [22.022,78.464];
 const STARTLOCATIONjson = {lat: 22.022, lng: 78.464};
 const STARTZOOM = 5;
 
@@ -13,6 +13,11 @@ const crosshairSize = 30;
 
 
 // GLOBAL VARIABLES
+
+var APIpath = 'https://server.nikhilvj.co.in/pmgsy/API';
+if (window.location.host =="localhost:5510") { 
+    APIpath = 'http://localhost:5510/API';
+}
 
 // ###########################################################
 // RUN ON PAGE LOAD
