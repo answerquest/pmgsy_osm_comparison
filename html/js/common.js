@@ -15,6 +15,8 @@ const crosshairSize = 30;
 // GLOBAL VARIABLES
 
 var APIpath = 'https://server.nikhilvj.co.in/pmgsy/API';
+var GPXpath = 'https://server.nikhilvj.co.in/pmgsy/gpx';
+
 if (window.location.host =="localhost:5510") { 
     APIpath = 'http://localhost:5510/API';
 }
