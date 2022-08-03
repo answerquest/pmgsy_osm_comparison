@@ -1,311 +1,357 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PMGSY Data preview</title>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMGSY Data preview</title>
 
-<link href="lib/leaflet.css" rel="stylesheet">
-<link href="lib/tabulator.min.css" rel="stylesheet">
-<link href="lib/bootstrap.min.css" rel="stylesheet">
-<link href="lib/easy-button.css" rel="stylesheet" >
-<link href="lib/leaflet.fullscreen.css" rel="stylesheet" />
-<link href="lib/leaflet.contextmenu.min.css" rel="stylesheet">
-<link href="lib/leaflet-search.css" rel="stylesheet">
-<link href="lib/selectize.bootstrap5.min.css" rel="stylesheet" />
-<link href="lib/open-iconic-bootstrap.min.css" rel="stylesheet" />
+    <link href="lib/leaflet.css" rel="stylesheet">
+    <link href="lib/tabulator.min.css" rel="stylesheet">
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <link href="lib/easy-button.css" rel="stylesheet">
+    <link href="lib/leaflet.fullscreen.css" rel="stylesheet" />
+    <link href="lib/leaflet.contextmenu.min.css" rel="stylesheet">
+    <link href="lib/leaflet-search.css" rel="stylesheet">
+    <link href="lib/selectize.bootstrap5.min.css" rel="stylesheet" />
+    <link href="lib/open-iconic-bootstrap.min.css" rel="stylesheet" />
 
-<!-- <link href="lib/L.Icon.Pulse.css" rel="stylesheet" /> -->
+    <!-- <link href="lib/L.Icon.Pulse.css" rel="stylesheet" /> -->
 
-<!-- <link href="js/style.css" rel="stylesheet"> -->
-
-
-<!-- Put the CSSs first and JSs next -->
-
-<script src="lib/jquery-3.6.0.min.js" type="text/javascript"></script>
-<script src="lib/leaflet.js"></script>
-<script src="lib/easy-button.js"></script>
-<script src="lib/bootstrap.bundle.min.js"></script>
-<script src="lib/tabulator.min.js" type="text/javascript"></script>
-<script src="lib/papaparse.min.js" type="text/javascript"></script>
-<script src="lib/leaflet-ant-path.js"></script>
-<script src="lib/Leaflet.fullscreen.min.js"></script>
-<script src="lib/Leaflet.Control.Custom.js"></script>
-<script src="lib/leaflet-providers.js"></script>
-<script src="lib/leaflet-hash.min.js"></script>
-<script src="lib/leaflet.contextmenu.min.js"></script>
-<script src="lib/leaflet-search.min.js"></script>
-<script src="lib/selectize.min.js"></script>
-<script src="lib/leaflet-lasso.min.js"></script>
-<script src="lib/turf.min.js"></script>
-<script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
-<!-- <script src="lib/L.Icon.Pulse.js"></script> -->
+    <!-- <link href="js/style.css" rel="stylesheet"> -->
 
 
-<style>
-/*body {
+    <!-- Put the CSSs first and JSs next -->
+    <script src="lib/jquery-3.6.0.min.js" type="text/javascript"></script>
+    <script src="lib/leaflet.js"></script>
+    <script src="lib/easy-button.js"></script>
+    <script src="lib/bootstrap.bundle.min.js"></script>
+    <script src="lib/tabulator.min.js" type="text/javascript"></script>
+    <script src="lib/papaparse.min.js" type="text/javascript"></script>
+    <script src="lib/leaflet-ant-path.js"></script>
+    <script src="lib/Leaflet.fullscreen.min.js"></script>
+    <script src="lib/Leaflet.Control.Custom.js"></script>
+    <script src="lib/leaflet-providers.js"></script>
+    <script src="lib/leaflet-hash.min.js"></script>
+    <script src="lib/leaflet.contextmenu.min.js"></script>
+    <script src="lib/leaflet-search.min.js"></script>
+    <script src="lib/selectize.min.js"></script>
+    <script src="lib/leaflet-lasso.min.js"></script>
+    <script src="lib/turf.min.js"></script>
+    <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+    <!-- <script src="lib/L.Icon.Pulse.js"></script> -->
+
+
+    <style>
+        /*body {
     font-size: 0.85em;
 }*/
 
-#map {
-    height: 90vh;
-    width: 100%;
-}
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
 
-#map2, #map3 {
-    height: 60vh;
-    width: 100%;
-}
-.regionSelect {
-    padding-top: 20px;
-    background: #e6f2ff; /*light blue*/
-    padding-bottom: 10px;
-}
+        #map2,
+        #map3 {
+            height: 60vh;
+            width: 100%;
+        }
+
+        .regionSelect {
+            padding-top: 20px;
+            background: #e6f2ff;
+            /*light blue*/
+            padding-bottom: 10px;
+        }
 
 
-.divOnMap1 {
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.8);
-    /*font-size: 14px;*/
-    border-radius: 5px;
-    box-shadow:0px 0px 5px black;
-    min-height: 50px;
-    max-width: 170px;
-    min-width: 100px;
-    /*overflow-y: scroll;*/
-}
+        .divOnMap1 {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            /*font-size: 14px;*/
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px black;
+            min-height: 50px;
+            max-width: 170px;
+            min-width: 100px;
+            /*overflow-y: scroll;*/
+        }
 
-.selectize-dropdown {
-    z-index: 2000;
-}
+        .selectize-dropdown {
+            z-index: 2000;
+        }
 
-.osm {
-    background: lightgoldenrodyellow;
-    padding-top: 12px;
-}
+        .osm {
+            background: lightgoldenrodyellow;
+            padding-top: 12px;
+        }
 
-.tabulator {
-    background: white;
-}
+        .tabulator {
+            background: white;
+        }
 
-.narrow1 {
-    width: 70px;
-}
+        .narrow1 {
+            width: 70px;
+        }
 
-.footer {
-    padding-top: 10px;
-    padding-bottom: 20px;
-    background: lightgreen;
-}
+        .footer {
+            padding-top: 10px;
+            padding-bottom: 20px;
+            background: lightgreen;
+        }
 
-.legend {
-    width: 16px; 
-    height: 16px; 
-    float: left; 
-    margin-right: 7px; 
-    opacity: 0.7; 
-}
+        .legend {
+            width: 16px;
+            height: 16px;
+            float: left;
+            margin-right: 7px;
+            opacity: 0.7;
+        }
 
-.main .col-md-6 {
-    padding-left: 0;
-    padding-right: 0;
-}
+        .main .col-md-6 {
+            padding-left: 0;
+            padding-right: 0;
+        }
 
-.main p, .main h3, .main h5 {
-    margin-left: 12px;
-}
+        .main p,
+        .main h3,
+        .main h5 {
+            margin-left: 12px;
+        }
 
-.textarea1 {
-    width: 100%;
-    height: 100px;
-}
+        .textarea1 {
+            width: 100%;
+            height: 100px;
+        }
 
-red {
-    color: red;
-}
+        red {
+            color: red;
+        }
 
-.leaflet-control-attribution {
-    max-width: 400px;
-}
-</style>
+        .leaflet-control-attribution {
+            max-width: 400px;
+        }
+    </style>
 </head>
+
 <body>
-<div class="container-fluid">
-<div class="regionSelect">
-    <h2>Browsing PMGSY Habitations Data</h2>
-    <div class="row">
-        <div class="col-md-4">
-            Select State:<br>
-            <select id="state"></select>
-        </div>
-        <div class="col-md-4">
-            Select District:<br>
-            <select id="district"></select>
-        </div>
-        <div class="col-md-4">
-            Select Block:<br>
-            <select id="block"></select>
-        </div>
-    </div>
-    <p align="right">Select from the dropdowns above, or right-click on the map below and select the block around that region directly.</p>
-</div>
+    <div class="container-fluid">
+        <div class="regionSelect">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <h2>Browsing PMGSY Habitations Data</h2>
+                <button id="login" class="btn btn-outline-success" type="button"
+                    style="margin-left: auto; margin-right: 0;" onclick="auth_login()">Login</button>
+                <button id="register" class="btn btn-outline-success" type="button" style="margin-left: 20px;"
+                    >Register</button>
+            </nav>
 
-<div class="row main">
-    <div class="col-md-6 order-2">
-        <h3>PMGSY Data</h3>
-        <p><span class="badge bg-dark" data-bs-toggle="collapse" href="#collapseTable1" role="button" aria-expanded="false" aria-controls="collapseTable1"><span class="oi oi-eye"></span></span><small> <button class="badge bg-primary" onclick="toggleSelected('habitations')" id="toggle_habitations">Show selected</button> <button class="badge bg-success"  onclick="downloadTable(1)"><span class="oi oi-data-transfer-download"></span></button> | <span id="table1_status">Select a block</span></small></p>
-        <div class="collapse show" id="collapseTable1">
-            <div id="table1"></div>
-        </div>
-        <div class="osm">
-            <h3>OpenStreetMap Data</h3>
-            <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100" > <button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM data</button> | <input type="checkbox" id="autoDiff" name="autoDiff"> <label for="autoDiff">Load Automatically</label></p>
-
-            <h5>1. Not near PMGSY Habitations</h5>
-            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2" role="button" aria-expanded="false" aria-controls="collapseTable2"><span class="oi oi-eye"></span></span> <button class="badge bg-primary" onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> <button class="badge bg-success"  onclick="downloadTable(2)"><span class="oi oi-data-transfer-download"></span></button> | <span id="osm_far_count"></span></small></p>
-            <div class="collapse hide" id="collapseTable2">
-                <div id="table2"></div>
+            <div class="row">
+                <div class="col-md-4">
+                    Select State:<br>
+                    <select id="state"></select>
+                </div>
+                <div class="col-md-4">
+                    Select District:<br>
+                    <select id="district"></select>
+                </div>
+                <div class="col-md-4">
+                    Select Block:<br>
+                    <select id="block"></select>
+                </div>
             </div>
-            <br>
-            <h5>2. Nearby PMGSY Habitations</h5>
-            <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable3" role="button" aria-expanded="false" aria-controls="collapseTable3"><span class="oi oi-eye"></span></span> <button class="badge bg-primary" onclick="toggleSelected('osm_near')" id="toggle_osm_near">Show selected</button>  <button class="badge bg-success"  onclick="downloadTable(3)"><span class="oi oi-data-transfer-download"></span></button> | <span id="osm_near_count"></span></small></p>
-            <div class="collapse hide" id="collapseTable3">
-                <div id="table3"></div>
-            </div>
-
-            <br><br><br>
-
-        </div>
-        <div class="footer container bg-success bg-gradient text-white">
-            <p>Created by <a href="https://nikhilvj.co.in" target="_blank" class="link-light">Nikhil, Kaisyn Consultancy and Training Pvt Ltd.</a><br>
-            <a href="https://github.com/answerquest/pmgsy_osm_comparison" target="_blank" class="link-light">See this project on github</a><br>
-            Using data from <a class="link-light" href="https://geosadak-pmgsy.nic.in/opendata" target="_blank">PMGSY Open Data Release</a>, collected at <a class="link-light" href="https://github.com/datameet/pmgsy-geosadak" target="_blank">this Datameet repo</a>.<br>
-
-            If you would like to support such projects, consider making a contribution on:<br>
-            UPI: 9766692835@okbizaxis 
+            <p align="left">Select from the dropdowns above, or right-click on the map below and select the block around
+                that region directly.</p>
         </div>
 
-        
-    </div>
-    <div class="col-md-6 order-1">
-        <div class="sticky-top">
-            <div id="map"></div>
-            <button class="btn btn-sm btn-outline-success" onclick="jump2OSM()">Open in OSM</button> 
-            <button class="btn btn-sm btn-outline-warning" onclick="jump2OSM('edit')">Edit in OSM</button>
-            <!-- <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal1">Feedback</button> -->
-        </div>
-    </div>
-</div>
+        <div class="row main">
+            <div class="col-md-6 order-2">
+                <h3>PMGSY Data</h3>
+                <p><span class="badge bg-dark" data-bs-toggle="collapse" href="#collapseTable1" role="button"
+                        aria-expanded="false" aria-controls="collapseTable1"><span
+                            class="oi oi-eye"></span></span><small> <button class="badge bg-primary"
+                            onclick="toggleSelected('habitations')" id="toggle_habitations">Show selected</button>
+                        <button class="badge bg-success" onclick="downloadTable(1)"><span
+                                class="oi oi-data-transfer-download"></span></button> | <span id="table1_status">Select
+                            a block</span></small></p>
+                <div class="collapse show" id="collapseTable1">
+                    <div id="table1"></div>
+                </div>
+                <div class="osm">
+                    <h3>OpenStreetMap Data</h3>
+                    <p>Proximity (m): <input class="narrow1" id="proximity" value="1000" type="number" step="100">
+                        <button class="btn btn-primary btn-sm" onclick="compareWithOSM()">Fetch and Compare OSM
+                            data</button> | <input type="checkbox" id="autoDiff" name="autoDiff"> <label
+                            for="autoDiff">Load Automatically</label></p>
 
+                    <h5>1. Not near PMGSY Habitations</h5>
+                    <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable2"
+                                role="button" aria-expanded="false" aria-controls="collapseTable2"><span
+                                    class="oi oi-eye"></span></span> <button class="badge bg-primary"
+                                onclick="toggleSelected('osm_far')" id="toggle_osm_far">Show selected</button> <button
+                                class="badge bg-success" onclick="downloadTable(2)"><span
+                                    class="oi oi-data-transfer-download"></span></button> | <span
+                                id="osm_far_count"></span></small></p>
+                    <div class="collapse hide" id="collapseTable2">
+                        <div id="table2"></div>
+                    </div>
+                    <br>
+                    <h5>2. Nearby PMGSY Habitations</h5>
+                    <p><small><span class="badge bg-secondary" data-bs-toggle="collapse" href="#collapseTable3"
+                                role="button" aria-expanded="false" aria-controls="collapseTable3"><span
+                                    class="oi oi-eye"></span></span> <button class="badge bg-primary"
+                                onclick="toggleSelected('osm_near')" id="toggle_osm_near">Show selected</button> <button
+                                class="badge bg-success" onclick="downloadTable(3)"><span
+                                    class="oi oi-data-transfer-download"></span></button> | <span
+                                id="osm_near_count"></span></small></p>
+                    <div class="collapse hide" id="collapseTable3">
+                        <div id="table3"></div>
+                    </div>
 
-<!-- Modals for feedback -->
+                    <br><br><br>
 
-<!-- Full screen modal -->
-<!-- Button trigger modal -->
+                </div>
+                <div class="footer container bg-success bg-gradient text-white">
+                    <p>Created by <a href="https://nikhilvj.co.in" target="_blank" class="link-light">Nikhil, Kaisyn
+                            Consultancy and Training Pvt Ltd.</a><br>
+                        <a href="https://github.com/answerquest/pmgsy_osm_comparison" target="_blank"
+                            class="link-light">See this project on github</a><br>
+                        Using data from <a class="link-light" href="https://geosadak-pmgsy.nic.in/opendata"
+                            target="_blank">PMGSY Open Data Release</a>, collected at <a class="link-light"
+                            href="https://github.com/datameet/pmgsy-geosadak" target="_blank">this Datameet
+                            repo</a>.<br>
 
+                        If you would like to support such projects, consider making a contribution on:<br>
+                        UPI: 9766692835@okbizaxis
+                </div>
 
-<!-- Modal -->
-<div class="modal fade" id="feedbackModal1" tabindex="-1" aria-labelledby="feedbackModal1Label" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="feedbackModal1Label">Submit Feedback for: <span id="HAB_ID"></span>, <span id="HAB_NAME"></span> </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-            <div class="col-md-4">
-                <p>Habitation Name:<br><input id="feedback1_changeName"></p>
-                <p>Population:<br><input id="feedback1_changePopulation" type="number"></p>
-                <p>Comments: <br><textarea id="feedback1_comments" class="textarea1"></textarea></p>
-                <small><i>Change any one field or add a comment to submit feedback.</i></small>
-                
-                
 
             </div>
-            <div class="col-md-4">
-                <p>Location: <span id="hab_location"></span></p>
-                <p><input type="checkbox" id="changeLoc" name="changeLoc"> <label for="changeLoc">Suggest change in location:</label><br>
-                <input id="newLoc" readonly><br>
-                <button class="btn btn-sm btn-danger" onclick="feedback1_resetLoc()">Reset</button>
-                </p>
-                <p>Share your contact details:<br>
-                    <input id="feedback1_submitter_name" placeholder="Name">
-                    <input id="feedback1_submitter_phone" placeholder="Phone number">
-                    <input id="feedback1_submitter_email" placeholder="Email">
-                </p>
-                <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
-            </div>
-            <div class="col-md-4">
-                <div id="map2"></div>
+            <div class="col-md-6 order-1">
+                <div class="sticky-top">
+                    <div id="map"></div>
+                    <button class="btn btn-sm btn-outline-success" onclick="jump2OSM()">Open in OSM</button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="jump2OSM('edit')">Edit in OSM</button>
+                    <!-- <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal1">Feedback</button> -->
+                </div>
             </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
-        <span id="feedback1_status"></span> &nbsp;&nbsp;
-        <button type="button" class="btn btn-primary" onclick="submitFeedback1()">Submit</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 
-<!-- Modal 2 -->
-<div class="modal fade" id="feedbackModal2" tabindex="-1" aria-labelledby="feedbackModal2Label" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="feedbackModal2Label">Submit Feedback for OSM place: <span id="osmName"></span> </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-            <div class="col-md-4">
-                <p>Suggestion:<br>
-                <select id="feedback2_category">
-                  <option value="osm_include" selected="selected">Include this place in PMGSY as a Habitation</option>
-                  <option value="osm_invalid">Do not include; not a valid Habitation</option>
-                </select>
+        <!-- Modals for feedback -->
 
-                <p>Name:<br><input id="feedback2_name"></p>
-                <p>Population:<br><input id="feedback2_population" type="number"><br>
-                  <small><i>Value from OSM if any, or you can provide one</i></small></p>
-                <p>Comments:<br><textarea id="feedback2_comments" class="textarea1"></textarea>
-                </p>
+        <!-- Full screen modal -->
+        <!-- Button trigger modal -->
 
+
+        <!-- Modal -->
+        <div class="modal fade" id="feedbackModal1" tabindex="-1" aria-labelledby="feedbackModal1Label"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="feedbackModal1Label">Submit Feedback for: <span id="HAB_ID"></span>,
+                            <span id="HAB_NAME"></span> </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p>Habitation Name:<br><input id="feedback1_changeName"></p>
+                                <p>Population:<br><input id="feedback1_changePopulation" type="number"></p>
+                                <p>Comments: <br><textarea id="feedback1_comments" class="textarea1"></textarea></p>
+                                <small><i>Change any one field or add a comment to submit feedback.</i></small>
+
+
+
+                            </div>
+                            <div class="col-md-4">
+                                <p>Location: <span id="hab_location"></span></p>
+                                <p><input type="checkbox" id="changeLoc" name="changeLoc"> <label
+                                        for="changeLoc">Suggest change in location:</label><br>
+                                    <input id="newLoc" readonly><br>
+                                    <button class="btn btn-sm btn-danger" onclick="feedback1_resetLoc()">Reset</button>
+                                </p>
+                                <p>Share your contact details:<br>
+                                    <input id="feedback1_submitter_name" placeholder="Name">
+                                    <input id="feedback1_submitter_phone" placeholder="Phone number">
+                                    <input id="feedback1_submitter_email" placeholder="Email">
+                                </p>
+                                <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="map2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+                        <span id="feedback1_status"></span> &nbsp;&nbsp;
+                        <button type="button" class="btn btn-primary" onclick="submitFeedback1()">Submit</button>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4">
-              <!-- <p>Info from OSM:<br>
+        </div>
+
+
+        <!-- Modal 2 -->
+        <div class="modal fade" id="feedbackModal2" tabindex="-1" aria-labelledby="feedbackModal2Label"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="feedbackModal2Label">Submit Feedback for OSM place: <span
+                                id="osmName"></span> </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p>Suggestion:<br>
+                                    <select id="feedback2_category">
+                                        <option value="osm_include" selected="selected">Include this place in PMGSY as a
+                                            Habitation</option>
+                                        <option value="osm_invalid">Do not include; not a valid Habitation</option>
+                                    </select>
+
+                                <p>Name:<br><input id="feedback2_name"></p>
+                                <p>Population:<br><input id="feedback2_population" type="number"><br>
+                                    <small><i>Value from OSM if any, or you can provide one</i></small>
+                                </p>
+                                <p>Comments:<br><textarea id="feedback2_comments" class="textarea1"></textarea>
+                                </p>
+
+                            </div>
+                            <div class="col-md-4">
+                                <!-- <p>Info from OSM:<br>
                 <span id="osm_info"></span></p> -->
-              <p>Share your contact details:<br>
-                  <input id="feedback2_submitter_name" placeholder="Name">
-                  <input id="feedback2_submitter_phone" placeholder="Phone number">
-                  <input id="feedback2_submitter_email" placeholder="Email">
-              </p>
-              <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
-            </div>
-            <div class="col-md-4">
-                <div id="map3"></div>
+                                <p>Share your contact details:<br>
+                                    <input id="feedback2_submitter_name" placeholder="Name">
+                                    <input id="feedback2_submitter_phone" placeholder="Phone number">
+                                    <input id="feedback2_submitter_email" placeholder="Email">
+                                </p>
+                                <small><i>Mandatory, must be valid or feedback will be discarded</i></small>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="map3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+                        <span id="feedback2_status"></span> &nbsp;&nbsp;
+                        <button type="button" class="btn btn-primary" onclick="submitfeedback2()">Submit</button>
+                    </div>
+                </div>
             </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
-        <span id="feedback2_status"></span> &nbsp;&nbsp;
-        <button type="button" class="btn btn-primary" onclick="submitfeedback2()">Submit</button>
-      </div>
+
     </div>
-  </div>
-</div>
 
-</div>
-
-<script src="lib/India_Outline_Map.js"></script>
-<script src="js/common.js"></script>
-<script src="js/habitation.js"></script>
-<script src="js/feedback.js"></script>
-
+    <script src="lib/India_Outline_Map.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/habitation.js"></script>
+    <script src="js/feedback.js"></script>
+    <script src="js/authentication.js"></script>
 </body>
 </html>
 
