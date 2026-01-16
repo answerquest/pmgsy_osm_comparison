@@ -1,7 +1,9 @@
 # PMGSY Data <> OSM comparison app
 
-Live website: https://server.nikhilvj.co.in/pmgsy/  
-OpenAPI doc: https://server.nikhilvj.co.in/pmgsy/docs  
+~~Live website: https://server.nikhilvj.co.in/pmgsy/  
+OpenAPI doc: https://server.nikhilvj.co.in/pmgsy/docs~~
+
+Update: live site no longer deployed. Others are welcome to copy source code and deploy at their side.
 
 This app (a backend + a webpage frontend) aims to bridge gaps between PMGSY data release and OpenStreetMap data by displaying both in one place and showing differences between them.
 
@@ -45,7 +47,7 @@ Collected at https://github.com/datameet/pmgsy-geosadak,
 And imported into a PostGreSQL DB as per this script https://github.com/answerquest/import_geosadak made by me earlier.  
 
 If you would like to support such projects, consider making a one-contribution on:
-**UPI: 9766692835@okbizaxis**
+**UPI: nikhil.js@okaxis**
 
 
 ## Stats file
